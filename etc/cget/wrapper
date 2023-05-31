@@ -1,0 +1,14 @@
+#!/bin/sh
+file="${0##*[/\\]}"
+dir="${0%"$file"}"
+dir="${dir:-.}"
+cd "$dir/.."
+dir="$PWD"
+cd - >/dev/null
+export PATH="$dir/bin"
+export LD_LIBRARY_PATH="$dir/lib"
+export CCACHE_CONFIGPATH="$dir/etc/ccache.conf"
+export CCACHE_DIR="$dir/.cache/ccache"
+export SHELL="$dir/bin/sh"
+unset PYTHONHOME PYTHONPATH MAKEFLAGS
+exec "$SHELL" "$dir/etc/cget/cget.sh" "$@"
