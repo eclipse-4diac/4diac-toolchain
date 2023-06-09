@@ -1,0 +1,3 @@
+#!/bin/sh
+while [ "${1#-}" != "$1" ]; do shift; done
+exec cp -r "$@"

@@ -1,0 +1,1 @@
+https://www.samba.org/ftp/ccache/ccache-3.6.tar.xz -H sha256:a6b129576328fcefad00cb72035bc87bc98b6a76aec0f4b59bed76d67a399b1f -X build.cmake -G Ninja

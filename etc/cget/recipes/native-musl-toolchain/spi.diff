@@ -1,0 +1,24 @@
+#********************************************************************************
+# Copyright (c) 2018, 2023 OFFIS e.V.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Eclipse Public License 2.0 which is available at
+# http://www.eclipse.org/legal/epl-2.0.
+#
+# SPDX-License-Identifier: EPL-2.0
+# 
+# Contributors:
+#    Jörg Walter - initial implementation
+# *******************************************************************************/
+
+--- a/include/linux/spi/spidev.h       2019-08-28 18:34:26.000000000 +0200
++++ v/include/linux/spi/spidev.h     2020-02-19 17:47:47.465416481 +0100
+@@ -23,6 +23,7 @@
+ #define SPIDEV_H
+ 
+ #include <linux/types.h>
++#include <linux/ioctl.h>
+ 
+ /* User space versions of kernel symbols for SPI clocking modes,
+  * matching <linux/spi/spi.h>
+
