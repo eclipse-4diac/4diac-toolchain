@@ -1,0 +1,158 @@
+diff -ru src.orig/litecross/Makefile src/litecross/Makefile
+--- src.orig/litecross/Makefile	2021-03-23 10:21:31.028195989 +0100
++++ src/litecross/Makefile	2021-03-23 12:32:32.334015030 +0100
+@@ -24,10 +24,18 @@
+ ifneq ($(findstring mingw,$(TARGET)),)
+ MUSL_SRCDIR =
+ LINUX_SRCDIR =
++NEWLIB_SRCDIR =
+ endif
+ 
+ ifneq ($(findstring musl,$(TARGET)),)
+ MINGW_SRCDIR =
++NEWLIB_SRCDIR =
++endif
++
++ifneq ($(findstring none,$(TARGET)),)
++MUSL_SRCDIR =
++LINUX_SRCDIR =
++MINGW_SRCDIR =
+ endif
+ 
+ ifneq ($(findstring fdpic,$(TARGET)),)
+@@ -76,7 +84,7 @@
+ 	$(COMMON_CONFIG) $(BINUTILS_CONFIG) $(TOOLCHAIN_CONFIG) \
+ 	--disable-werror \
+ 	--target=$(TARGET) --prefix= \
+-	--libdir=/lib --disable-multilib \
++	--libdir=/lib \
+ 	--with-sysroot=$(SYSROOT) \
+ 	--enable-deterministic-archives
+ 
+@@ -87,7 +87,7 @@
+ 	--disable-assembly \
+ 	--disable-werror \
+ 	--target=$(TARGET) --prefix= \
+-	--libdir=/lib --disable-multilib \
++	--libdir=/lib \
+ 	--with-sysroot=$(SYSROOT) \
+ 	--enable-tls \
+ 	--disable-libmudflap --disable-libsanitizer \
+@@ -102,6 +110,10 @@
+ FULL_GCC_CONFIG += --disable-tls --disable-initfini-array
+ endif
+ 
++ifneq ($(NEWLIB_SRCDIR),)
++FULL_GCC_CONFIG += --with-newlib --disable-threads --disable-libatomic --enable-newlib-retargetable-locking --enable-newlib-iconv --enable-newlib-multithread --enable-newlib-io-pos-arg --enable-newlib-io-c99-formats --enable-newlib-register-fini --enable-newlib-io-long-long --enable-newlib-io-long-double --enable-newlib-mb --enable-newlib-global-stdio-streams --disable-newlib-fno-builtin --enable-newlib-iconv-encodings=utf_8,utf_16,ucs_2,ucs_4,big5,euc_jp,euc_kr,euc_tw,koi8_r,us_ascii,cp850,win_1250,win_1252,iso_8859_1,iso_8859_15
++endif
++
+ FULL_MINGW_HEADERS_CONFIG = $(MINGW_CONFIG) \
+ 	--prefix= --host=$(TARGET) --enable-sdk=all \
+ 	--enable-idl --enable-secure-api --with-sysroot=$(SYSROOT)
+@@ -179,6 +191,10 @@
+ all: mingw gcc binutils
+ endif
+ 
++ifneq ($(NEWLIB_SRCDIR),)
++all: gcc binutils
++endif
++
+ ifneq ($(MUSL_SRCDIR),)
+ install: install-musl install-gcc install-binutils
+ endif
+@@ -187,6 +203,10 @@
+ install: install-mingw install-gcc install-binutils
+ endif
+ 
++ifneq ($(NEWLIB_SRCDIR),)
++install: install-gcc install-binutils
++endif
++
+ musl: obj_musl/.lc_built
+ 
+ mingw: obj_mingw_headers/.lc_built obj_mingw_crt/.lc_built obj_mingw_pthreads/.lc_built
+@@ -241,6 +261,12 @@
+ 	ln -sf "$(ISL_SRCDIR)" $@
+ endif
+ 
++ifneq ($(NEWLIB_SRCDIR),)
++src_gcc: src_newlib
++src_newlib: | $(NEWLIB_SRCDIR)
++	ln -sf "$(NEWLIB_SRCDIR)" $@
++endif
++
+ src_gcc: src_gcc_base
+ 	rm -rf $@ $@.tmp
+ 	mkdir $@.tmp
+@@ -249,6 +275,7 @@
+ 	$(if $(MPC_SRCDIR),cd $@.tmp && ln -sf ../src_mpc mpc)
+ 	$(if $(MPFR_SRCDIR),cd $@.tmp && ln -sf ../src_mpfr mpfr)
+ 	$(if $(ISL_SRCDIR),cd $@.tmp && ln -sf ../src_isl isl)
++	$(if $(NEWLIB_SRCDIR),cd $@.tmp && ln -sf ../src_newlib/newlib ../src_newlib/libgloss .)
+ 	mv $@.tmp $@
+ 
+ obj_%:
+@@ -329,6 +356,11 @@
+ 	touch $@
+ endif
+ 
++ifneq ($(NEWLIB_SRCDIR),)
++obj_sysroot/.lc_libs obj_sysroot/.lc_headers:
++	touch $@
++endif
++
+ ifneq ($(MINGW_SRCDIR),)
+ obj_sysroot/.lc_libs: | obj_sysroot/.lc_libs_pthreads obj_sysroot/.lc_libs_crt
+ 	touch $@
+diff -ru src.orig/Makefile src/Makefile
+--- src.orig/Makefile	2021-03-23 10:21:31.021529342 +0100
++++ src/Makefile	2021-03-23 13:18:05.882535182 +0100
+@@ -10,6 +10,7 @@
+ MPFR_VER = 4.2.0
+ LINUX_VER = 6.1.31
+ MINGW_VER = v7.0.0
++NEWLIB_VER = 4.1.0
+ 
+ GNU_SITE = https://ftpmirror.gnu.org/gnu
+ GCC_SITE = $(GNU_SITE)/gcc
+@@ -27,6 +28,8 @@
+ 
+ MINGW_SITE = https://sourceforge.net/projects/mingw-w64/files/mingw-w64/mingw-w64-release/
+ 
++NEWLIB_SITE = https://sourceware.org/pub/newlib/
++
+ DL_CMD = wget -c -O
+ SHA1_CMD = sha1sum -c
+ 
+@@ -47,12 +50,13 @@
+ 	$(if $(MPFR_VER),mpfr-$(MPFR_VER)) \
+ 	$(if $(ISL_VER),isl-$(ISL_VER)) \
+ 	$(if $(LINUX_VER),linux-$(LINUX_VER)) \
++	$(if $(NEWLIB_VER),newlib-$(NEWLIB_VER)) \
+         $(if $(MINGW_VER),mingw-w64-$(MINGW_VER))
+ 
+ all:
+ 
+ clean:
+-	rm -rf gcc-* binutils-* musl-* gmp-* mpc-* mpfr-* isl-* build build-* linux-* mingw-w64-*
++	rm -rf gcc-* binutils-* musl-* gmp-* mpc-* mpfr-* isl-* build build-* linux-* mingw-w64-* newlib-*
+ 
+ distclean: clean
+ 	rm -rf sources
+@@ -70,6 +74,7 @@
+ $(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/binutils*)): SITE = $(BINUTILS_SITE)
+ $(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/gcc*)): SITE = $(GCC_SITE)/$(basename $(basename $(notdir $@)))
+ $(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/musl*)): SITE = $(MUSL_SITE)
++$(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/newlib*)): SITE = $(NEWLIB_SITE)
+ $(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/linux-6*)): SITE = $(LINUX_SITE)/v6.x
+ $(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/linux-5*)): SITE = $(LINUX_SITE)/v5.x
+ $(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/linux-4*)): SITE = $(LINUX_SITE)/v4.x
+ $(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/linux-3*)): SITE = $(LINUX_SITE)/v3.x
+@@ -183,6 +188,7 @@
+ 	$(if $(ISL_VER),"ISL_SRCDIR = $(REL_TOP)/isl-$(ISL_VER)") \
+ 	$(if $(LINUX_VER),"LINUX_SRCDIR = $(REL_TOP)/linux-$(LINUX_VER)") \
+ 	$(if $(MINGW_VER),"MINGW_SRCDIR = $(REL_TOP)/mingw-w64-$(MINGW_VER)") \
++	$(if $(NEWLIB_VER),"NEWLIB_SRCDIR = $(REL_TOP)/newlib-$(NEWLIB_VER)") \
+ 	"-include $(REL_TOP)/config.mak"
+ 
+ all: | $(SRC_DIRS) $(BUILD_DIR) $(BUILD_DIR)/Makefile $(BUILD_DIR)/config.mak

@@ -1,0 +1,4 @@
+gnumake -b
+busybox -b
+curl -b
+zlib

@@ -1,0 +1,1 @@
+http://ftp.gnu.org/pub/old-gnu/regex/regex-0.12.tar.gz -X build.cmake -H sha256:f36e2d8d56bf15054a850128fcb2f51807706a92d3bb4b37ceadd731535ce230

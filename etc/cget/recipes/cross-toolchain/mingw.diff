@@ -1,0 +1,389 @@
+diff --git a/.gitignore b/.gitignore
+index 47f44e1..b5e2c7f 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -10,4 +10,5 @@
+ /build-*/
+ /linux-*/
+ /isl-*/
++/mingw-*/
+ /build/
+diff --git a/Makefile b/Makefile
+index a412f60..13e351f 100644
+--- a/Makefile
++++ b/Makefile
+@@ -9,6 +9,7 @@ GMP_VER = 6.2.1
+ MPC_VER = 1.3.1
+ MPFR_VER = 4.2.0
+ LINUX_VER = 6.1.31
++MINGW_VER = v7.0.0
+
+ GNU_SITE = https://ftpmirror.gnu.org/gnu
+ GCC_SITE = $(GNU_SITE)/gcc
+@@ -24,6 +25,8 @@ MUSL_REPO = git://git.musl-libc.org/musl
+ LINUX_SITE = https://cdn.kernel.org/pub/linux/kernel
+ LINUX_HEADERS_SITE = http://ftp.barfooze.de/pub/sabotage/tarballs/
+
++MINGW_SITE = https://sourceforge.net/projects/mingw-w64/files/mingw-w64/mingw-w64-release/
++
+ DL_CMD = wget -c -O
+ SHA1_CMD = sha1sum -c
+
+@@ -37,17 +40,19 @@ REL_TOP = ../../..
+
+ -include config.mak
+
+-SRC_DIRS = gcc-$(GCC_VER) binutils-$(BINUTILS_VER) musl-$(MUSL_VER) \
++SRC_DIRS = gcc-$(GCC_VER) binutils-$(BINUTILS_VER) \
++        $(if $(MUSL_VER),musl-$(MUSL_VER)) \
+ 	$(if $(GMP_VER),gmp-$(GMP_VER)) \
+ 	$(if $(MPC_VER),mpc-$(MPC_VER)) \
+ 	$(if $(MPFR_VER),mpfr-$(MPFR_VER)) \
+ 	$(if $(ISL_VER),isl-$(ISL_VER)) \
+-	$(if $(LINUX_VER),linux-$(LINUX_VER))
++	$(if $(LINUX_VER),linux-$(LINUX_VER)) \
++        $(if $(MINGW_VER),mingw-w64-$(MINGW_VER))
+
+ all:
+
+ clean:
+-	rm -rf gcc-* binutils-* musl-* gmp-* mpc-* mpfr-* isl-* build build-* linux-*
++	rm -rf gcc-* binutils-* musl-* gmp-* mpc-* mpfr-* isl-* build build-* linux-* mingw-w64-*
+
+ distclean: clean
+ 	rm -rf sources
+@@ -70,6 +75,7 @@ $(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/linux-4*)): SITE = $(LIN
+ $(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/linux-3*)): SITE = $(LINUX_SITE)/v3.x
+ $(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/linux-2.6*)): SITE = $(LINUX_SITE)/v2.6
+ $(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/linux-headers-*)): SITE = $(LINUX_HEADERS_SITE)
++$(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/mingw-w64*)): SITE = $(MINGW_SITE)
+
+ $(SOURCES):
+ 	mkdir -p $@
+@@ -168,14 +174,15 @@ $(BUILD_DIR)/config.mak: | $(BUILD_DIR)
+ 	printf >$@ '%s\n' \
+ 	"TARGET = $(TARGET)" \
+ 	"HOST = $(HOST)" \
+-	"MUSL_SRCDIR = $(REL_TOP)/musl-$(MUSL_VER)" \
+ 	"GCC_SRCDIR = $(REL_TOP)/gcc-$(GCC_VER)" \
+ 	"BINUTILS_SRCDIR = $(REL_TOP)/binutils-$(BINUTILS_VER)" \
++	$(if $(MUSL_VER),"MUSL_SRCDIR = $(REL_TOP)/musl-$(MUSL_VER)") \
+ 	$(if $(GMP_VER),"GMP_SRCDIR = $(REL_TOP)/gmp-$(GMP_VER)") \
+ 	$(if $(MPC_VER),"MPC_SRCDIR = $(REL_TOP)/mpc-$(MPC_VER)") \
+ 	$(if $(MPFR_VER),"MPFR_SRCDIR = $(REL_TOP)/mpfr-$(MPFR_VER)") \
+ 	$(if $(ISL_VER),"ISL_SRCDIR = $(REL_TOP)/isl-$(ISL_VER)") \
+ 	$(if $(LINUX_VER),"LINUX_SRCDIR = $(REL_TOP)/linux-$(LINUX_VER)") \
++	$(if $(MINGW_VER),"MINGW_SRCDIR = $(REL_TOP)/mingw-w64-$(MINGW_VER)") \
+ 	"-include $(REL_TOP)/config.mak"
+
+ all: | $(SRC_DIRS) $(BUILD_DIR) $(BUILD_DIR)/Makefile $(BUILD_DIR)/config.mak
+diff --git a/README.md b/README.md
+index 2c346df..8b6009b 100644
+--- a/README.md
++++ b/README.md
+@@ -1,11 +1,13 @@
+-musl-cross-make
++musl|mingw-cross-make
+ ===============
+
++This is a fork of musl-cross-make, with added support for mingw.
++
+ This is the second generation of musl-cross-make, a fast, simple,
+ but advanced makefile-based approach for producing musl-targeting
+ cross compilers. Features include:
+
+-- Single-stage GCC build, used to build both musl libc and its own
++- Single-stage GCC build, used to build both musl libc (or mingw) and its own
+   shared target libs depending on libc.
+
+ - No hard-coded absolute paths; resulting cross compilers can be
+diff --git a/config.mak.dist b/config.mak.dist
+index 181976c..3ab694c 100644
+--- a/config.mak.dist
++++ b/config.mak.dist
+@@ -12,6 +12,8 @@
+ # TARGET = arm-linux-musleabi
+ # TARGET = arm-linux-musleabihf
+ # TARGET = sh2eb-linux-muslfdpic
++# TARGET = x86_64-w64-mingw32
++# TARGET = i686-w64-mingw32
+ # ...
+
+ # By default, cross compilers are installed to ./output under the top-level
+@@ -80,6 +82,9 @@
+
+ # GCC_CONFIG += --enable-languages=c,c++
+
++# recommend: disable building lib32 crt when building 64-bit compiler
++# MINGW_CRT_CONFIG += --disable-lib32 --enable-lib64 --disable-libarm32
++
+ # You can keep the local build path out of your toolchain binaries and
+ # target libraries with the following, but then gdb needs to be told
+ # where to look for source files.
+--- a/litecross/Makefile	2021-03-07 02:52:05.889088239 +0100
++++ b/litecross/Makefile	2021-03-06 22:29:49.039084819 +0100
+@@ -3,18 +3,33 @@
+ 
+ BINUTILS_SRCDIR = BINUTILS_SRCDIR_not_set
+ GCC_SRCDIR = GCC_SRCDIR_not_set
+-MUSL_SRCDIR = MUSL_SRCDIR_not_set
+ 
+ GCC_CONFIG_FOR_TARGET = 
+ COMMON_CONFIG = 
+ GCC_CONFIG = 
++MINGW_CRT_CONFIG =
+ TOOLCHAIN_CONFIG = 
+ 
+-XGCC_DIR = ../obj_gcc/gcc
+-XGCC = $(XGCC_DIR)/xgcc -B $(XGCC_DIR)
++XGCC_DIR = $(CURDIR)/obj_gcc/gcc
++XGCC = $(XGCC_DIR)/xgcc -B $(XGCC_DIR) -B $(CURDIR)/obj_sysroot/$(TARGET)/lib
++XCPP = $(XGCC_DIR)/cpp -B $(XGCC_DIR)
++XAR  = $(CURDIR)/obj_binutils/binutils/ar
++XAS  = $(CURDIR)/obj_binutils/gas/as-new
++XRANLIB  = $(CURDIR)/obj_binutils/binutils/ranlib
++XRC  = $(CURDIR)/obj_binutils/binutils/windres --preprocessor=$(XGCC_DIR)/xgcc --preprocessor-arg=-B --preprocessor-arg=$(XGCC_DIR) --preprocessor-arg=-I$(CURDIR)/obj_sysroot/$(TARGET)/include --preprocessor-arg=-E --preprocessor-arg=-xc-header --preprocessor-arg=-DRC_INVOKED -c 1252
++DLLTOOL = $(CURDIR)/obj_binutils/binutils/dlltool
+ 
+ -include config.mak
+ 
++ifneq ($(findstring mingw,$(TARGET)),)
++MUSL_SRCDIR =
++LINUX_SRCDIR =
++endif
++
++ifneq ($(findstring musl,$(TARGET)),)
++MINGW_SRCDIR =
++endif
++
+ ifneq ($(findstring fdpic,$(TARGET)),)
+ GCC_CONFIG_FOR_TARGET += --enable-fdpic
+ endif
+@@ -83,6 +98,20 @@
+ FULL_MUSL_CONFIG = $(MUSL_CONFIG) \
+ 	--prefix= --host=$(TARGET)
+ 
++ifneq ($(MINGW_SRCDIR),)
++FULL_GCC_CONFIG += --disable-tls --disable-initfini-array
++endif
++
++FULL_MINGW_HEADERS_CONFIG = $(MINGW_CONFIG) \
++	--prefix= --host=$(TARGET) --enable-sdk=all \
++	--enable-idl --enable-secure-api --with-sysroot=$(SYSROOT)
++
++FULL_MINGW_CRT_CONFIG = $(MINGW_CONFIG) $(MINGW_CRT_CONFIG) \
++	--prefix= --host=$(TARGET) --with-sysroot=$(SYSROOT)
++
++FULL_MINGW_PTHREADS_CONFIG = $(MINGW_CONFIG) \
++	--prefix= --host=$(TARGET) --with-sysroot=$(SYSROOT)
++
+ ifneq ($(NATIVE),)
+ HOST:=$(TARGET)
+ endif
+@@ -93,8 +122,8 @@
+ BUILD = $(GUESS)$(if $(subst $(TARGET_CANON),,$(GUESS)),,xx)
+ endif
+ 
+-ifeq ($(HOST),)
+ SYSROOT = /$(TARGET)
++ifeq ($(HOST),)
+ FULL_BINUTILS_CONFIG += --build=$(BUILD) --host=$(BUILD)
+ FULL_GCC_CONFIG += --with-build-sysroot=$(CURDIR)/obj_sysroot \
+ 	AR_FOR_TARGET=$(PWD)/obj_binutils/binutils/ar \
+@@ -110,17 +139,27 @@
+ 	# end
+ FULL_MUSL_CONFIG += CC="$(XGCC)" LIBCC="../obj_gcc/$(TARGET)/libgcc/libgcc.a" 
+ MUSL_VARS = AR=../obj_binutils/binutils/ar RANLIB=../obj_binutils/binutils/ranlib
++MINGW_VARS = AS="$(XAS)" AR="$(XAR)" CC="$(XGCC)" RANLIB="$(XRANLIB)"
++FULL_MINGW_PTHREADS_CONFIG += RC="$(XRC)" CC="$(XGCC)" CPP="$(XCPP)" CPPFLAGS="-I$(CURDIR)/obj_sysroot/$(TARGET)/include $(CPPFLAGS)" LDFLAGS="-L$(CURDIR)/obj_sysroot/$(TARGET)/lib $(LDFLAGS)" DLLTOOL=$(DLLTOOL)
++FULL_MINGW_CRT_CONFIG += CC="$(XGCC)" CPP="$(XCPP)" CPPFLAGS="-I$(CURDIR)/obj_sysroot/$(TARGET)/include $(CPPFLAGS)" DLLTOOL="$(DLLTOOL)" RC="$(XRC)"
++else
++FULL_BINUTILS_CONFIG += --build=$(BUILD) --host=$(HOST)
++FULL_GCC_CONFIG += --with-build-sysroot=$(CURDIR)/obj_sysroot \
++				   --build=$(BUILD) --host=$(HOST)
++FULL_MUSL_CONFIG += LIBCC="../obj_gcc/$(TARGET)/libgcc/libgcc.a"
++MUSL_VARS = 
++FULL_MINGW_PTHREADS_CONFIG += CPPFLAGS="-I$(CURDIR)/obj_sysroot/$(TARGET)/include $(CPPFLAGS)" LDFLAGS="-L$(CURDIR)/obj_sysroot/$(TARGET)/lib $(LDFLAGS)"
++FULL_MINGW_CRT_CONFIG += CPPFLAGS="-I$(CURDIR)/obj_sysroot/$(TARGET)/include $(CPPFLAGS)"
++endif
++
++obj_mingw_headers/.lc_configured: | obj_binutils/.lc_built
++obj_mingw_crt/.lc_configured: | obj_sysroot/.lc_headers obj_gcc/gcc/.lc_built obj_binutils/.lc_built
++obj_mingw_pthreads/.lc_configured: | obj_sysroot/.lc_headers obj_gcc/gcc/.lc_built obj_binutils/.lc_built obj_sysroot/.lc_libs_crt
+ obj_musl/.lc_configured: | obj_gcc/gcc/.lc_built
+ obj_musl/.lc_built: | obj_gcc/$(TARGET)/libgcc/libgcc.a
+ obj_gcc/gcc/.lc_built: | obj_sysroot/usr obj_sysroot/lib32 obj_sysroot/lib64 obj_sysroot/include
+ obj_gcc/.lc_built: | obj_sysroot/.lc_libs obj_sysroot/.lc_headers
+ obj_gcc/.lc_configured: obj_binutils/.lc_built
+-else
+-SYSROOT = /
+-FULL_BINUTILS_CONFIG += --build=$(BUILD) --host=$(HOST)
+-FULL_GCC_CONFIG += --build=$(BUILD) --host=$(HOST)
+-MUSL_VARS = 
+-endif
+ 
+ ifeq ($(TARGET),)
+ 
+@@ -132,12 +171,26 @@
+ 
+ else
+ 
++ifneq ($(MUSL_SRCDIR),)
+ all: musl gcc binutils
++endif
+ 
++ifneq ($(MINGW_SRCDIR),)
++all: mingw gcc binutils
++endif
++
++ifneq ($(MUSL_SRCDIR),)
+ install: install-musl install-gcc install-binutils
++endif
++
++ifneq ($(MINGW_SRCDIR),)
++install: install-mingw install-gcc install-binutils
++endif
+ 
+ musl: obj_musl/.lc_built
+ 
++mingw: obj_mingw_headers/.lc_built obj_mingw_crt/.lc_built obj_mingw_pthreads/.lc_built
++
+ toolchain: gcc binutils
+ 
+ install-toolchain: install-gcc install-binutils
+@@ -146,7 +199,7 @@
+ 
+ binutils: obj_binutils/.lc_built
+ 
+-.PHONY: all musl toolchain install-musl install-toolchain clean
++.PHONY: all musl mingw toolchain install-musl install-mingw install-toolchain clean
+ 
+ src_binutils: | $(BINUTILS_SRCDIR)
+ 	ln -sf $(BINUTILS_SRCDIR) $@
+@@ -154,8 +207,15 @@
+ src_gcc_base: | $(GCC_SRCDIR)
+ 	ln -sf $(GCC_SRCDIR) $@
+ 
++ifneq ($(MUSL_SRCDIR),)
+ src_musl: | $(MUSL_SRCDIR)
+ 	ln -sf $(MUSL_SRCDIR) $@
++endif
++
++ifneq ($(MINGW_SRCDIR),)
++src_mingw: | $(MINGW_SRCDIR)
++	ln -sf $(MINGW_SRCDIR) $@
++endif
+ 
+ ifneq ($(GMP_SRCDIR),)
+ src_gcc: src_gmp
+@@ -218,17 +278,43 @@
+ 	cd obj_gcc && ../src_gcc/configure $(FULL_GCC_CONFIG)
+ 	touch $@
+ 
++ifneq ($(MUSL_SRCDIR),)
+ obj_gcc/gcc/.lc_built: | obj_gcc/.lc_configured
+ 	cd obj_gcc && $(MAKE) MAKE="$(MAKE) $(LIBTOOL_ARG)" all-gcc
+ 	touch $@
++endif
++
++ifneq ($(MINGW_SRCDIR),)
++obj_gcc/gcc/.lc_built: | obj_gcc/.lc_configured obj_sysroot/.lc_headers
++	cd obj_gcc && $(MAKE) MAKE="$(MAKE) $(LIBTOOL_ARG)" all-gcc
++	touch $@
++endif
+ 
++ifneq ($(MUSL_SRCDIR),)
+ obj_musl/.lc_configured: | obj_musl src_musl
+ 	cd obj_musl && ../src_musl/configure $(FULL_MUSL_CONFIG)
+ 	touch $@
++endif
+ 
++ifneq ($(MINGW_SRCDIR),)
++obj_mingw/.lc_configured: | obj_mingw src_mingw obj_mingw_headers/.lc_configured obj_mingw_crt/.lc_configured
++	touch $@
++endif
++
++ifneq ($(MUSL_SRCDIR),)
+ obj_sysroot/.lc_headers: | obj_musl/.lc_configured obj_sysroot
+ 	cd obj_musl && $(MAKE) DESTDIR=$(CURDIR)/obj_sysroot install-headers
+ 	touch $@
++endif
++
++ifneq ($(MINGW_SRCDIR),)
++obj_sysroot/.lc_headers: | obj_mingw_headers/.lc_configured obj_sysroot
++	cd obj_mingw_headers && $(MAKE) DESTDIR=$(CURDIR)/obj_sysroot/$(TARGET) install
++	cp $(MINGW_SRCDIR)/mingw-w64-libraries/winpthreads/include/* $(CURDIR)/obj_sysroot/$(TARGET)/include/
++	rm -f $(CURDIR)/obj_sysroot/mingw
++	ln -s $(TARGET) $(CURDIR)/obj_sysroot/mingw
++	touch $@
++endif
+ 
+ obj_gcc/$(TARGET)/libgcc/libgcc.a: | obj_sysroot/.lc_headers
+ 	cd obj_gcc && $(MAKE) MAKE="$(MAKE) enable_shared=no $(LIBTOOL_ARG)" all-target-libgcc
+@@ -237,9 +323,16 @@
+ 	cd obj_musl && $(MAKE) $(MUSL_VARS)
+ 	touch $@
+ 
++ifneq ($(MUSL_SRCDIR),)
+ obj_sysroot/.lc_libs: | obj_musl/.lc_built
+ 	cd obj_musl && $(MAKE) $(MUSL_VARS) DESTDIR=$(CURDIR)/obj_sysroot install
+ 	touch $@
++endif
++
++ifneq ($(MINGW_SRCDIR),)
++obj_sysroot/.lc_libs: | obj_sysroot/.lc_libs_pthreads obj_sysroot/.lc_libs_crt
++	touch $@
++endif
+ 
+ obj_gcc/.lc_built: | obj_gcc/.lc_configured obj_gcc/gcc/.lc_built
+ 	cd obj_gcc && $(MAKE) MAKE="$(MAKE) $(LIBTOOL_ARG)"
+@@ -255,6 +348,49 @@
+ 	cd obj_gcc && $(MAKE) MAKE="$(MAKE) $(LIBTOOL_ARG)" DESTDIR=$(DESTDIR)$(OUTPUT) install
+ 	ln -sf $(TARGET)-gcc $(DESTDIR)$(OUTPUT)/bin/$(TARGET)-cc
+ 
++obj_mingw_headers/.lc_configured: | obj_mingw_headers src_mingw
++	cd obj_mingw_headers && ../src_mingw/mingw-w64-headers/configure $(FULL_MINGW_HEADERS_CONFIG)
++	touch $@
++
++obj_mingw_headers/.lc_built: | obj_mingw_headers/.lc_configured
++	cd obj_mingw_headers && $(MAKE) $(MINGW_VARS)
++	touch $@
++
++obj_mingw_crt/.lc_configured: | obj_sysroot/.lc_headers obj_binutils/.lc_built obj_gcc/gcc/.lc_built obj_mingw_crt src_mingw
++	cd obj_mingw_crt && ../src_mingw/mingw-w64-crt/configure $(FULL_MINGW_CRT_CONFIG)
++	touch $@
++
++obj_mingw_crt/.lc_built: | obj_mingw_crt/.lc_configured
++	cd obj_mingw_crt && $(MAKE) $(MINGW_VARS)
++	touch $@
++
++obj_mingw_pthreads/.lc_configured: | obj_mingw_crt/.lc_built obj_mingw_pthreads src_mingw
++	cd obj_mingw_pthreads && ../src_mingw/mingw-w64-libraries/winpthreads/configure $(FULL_MINGW_PTHREADS_CONFIG)
++	touch $@
++
++obj_mingw_pthreads/.lc_built: | obj_mingw_pthreads/.lc_configured
++	cd obj_mingw_pthreads && $(MAKE) $(MINGW_VARS)
++	touch $@
++
++obj_sysroot/.lc_libs_pthreads: | obj_mingw_pthreads/.lc_built
++	cd obj_mingw_pthreads && $(MAKE) $(MINGW_VARS) DESTDIR=$(CURDIR)/obj_sysroot/$(TARGET) install
++	touch $@
++
++obj_sysroot/.lc_libs_crt: | obj_mingw_crt/.lc_built
++	cd obj_mingw_crt && $(MAKE) $(MINGW_VARS) DESTDIR=$(CURDIR)/obj_sysroot/$(TARGET) install
++	touch $@
++
++install-mingw-headers: | obj_mingw_headers/.lc_configured
++	cd obj_mingw_headers && $(MAKE) $(MINGW_VARS) DESTDIR=$(DESTDIR)$(OUTPUT)$(SYSROOT) install
++
++install-mingw-crt: | obj_mingw_crt/.lc_built
++	cd obj_mingw_crt && $(MAKE) $(MINGW_VARS) DESTDIR=$(DESTDIR)$(OUTPUT)$(SYSROOT) install
++
++install-mingw-pthreads: | obj_mingw_pthreads/.lc_built
++	cd obj_mingw_pthreads && $(MAKE) $(MINGW_VARS) DESTDIR=$(DESTDIR)$(OUTPUT)$(SYSROOT) install
++
++install-mingw: install-mingw-headers install-mingw-crt install-mingw-pthreads
++
+ ifneq ($(LINUX_SRCDIR),)
+ TARGET_ARCH = $(firstword $(subst -, ,$(TARGET)))
+ TARGET_ARCH_MANGLED = $(patsubst i%86,x86,$(patsubst aarch64%,arm64%,$(TARGET_ARCH)))

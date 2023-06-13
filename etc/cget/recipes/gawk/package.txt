@@ -1,0 +1,1 @@
+https://ftp.gnu.org/gnu/gawk/gawk-5.1.1.tar.xz -H sha256:d87629386e894bbea11a5e00515fc909dc9b7249529dad9e6a3a2c77085f7ea2 -X build.cmake -G Ninja

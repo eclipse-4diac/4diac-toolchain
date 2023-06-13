@@ -1,0 +1,1 @@
+richfelker/musl-cross-make@v0.9.7 -X build.cmake -H sha256:876173e2411b5f50516723c63075655a9aac55ee3804f91adfb61f0a85af8f38

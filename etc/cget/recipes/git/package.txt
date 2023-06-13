@@ -1,0 +1,1 @@
+https://www.kernel.org/pub/software/scm/git/git-2.14.2.tar.gz -H sha256:a03a12331d4f9b0f71733db9f47e1232d4ddce00e7f2a6e20f6ec9a19ce5ff61 -X build.cmake

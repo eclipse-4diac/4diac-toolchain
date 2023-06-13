@@ -1,0 +1,1 @@
+http://www.dest-unreach.org/socat/download/socat-1.7.4.2.tar.gz -H sha256:a38f507dea8aaa8f260f54ebc1de1a71e5adca416219f603cda3e3002960173c -X build.cmake -G Ninja

@@ -1,0 +1,1 @@
+python-cmake-buildsystem/python-cmake-buildsystem@bb45aa7a4cfc7a5a93bc490c6158f702d1a2226f -X build.cmake -H sha256:b1d89d2b6fc83eb01feb1f872f045ea0622c9b2b90008884f3f52ed742abb65f
