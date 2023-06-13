@@ -1,0 +1,36 @@
+#!/bin/sh
+#********************************************************************************
+# Copyright (c) 2018, 2023 OFFIS e.V.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Eclipse Public License 2.0 which is available at
+# http://www.eclipse.org/legal/epl-2.0.
+#
+# SPDX-License-Identifier: EPL-2.0
+# 
+# Contributors:
+#    Jörg Walter - initial implementation
+# *******************************************************************************/
+#
+# CMake wrapper for bootstrapping purposes
+# The bootstraped phase 1 CMake is not able to call specific commands with -E
+# for more info on that see the comment in etc/cget/cget.sh #52-55.
+#
+# To avoid complex path manipulation a enviroment variable is used which
+# points to the phase 1 CMake, this can be used to configure the sources and
+# building the full phase 2 CMake.
+
+set -e
+
+if [ "$1" = "-E" ]; then
+    shift;
+    exec "$@"
+elif [ "$1" = "--build" ]; then
+    make
+else 
+    exec "$BOOTSTRAP_CMAKE" "$@"
+fi
+
+
+
+
