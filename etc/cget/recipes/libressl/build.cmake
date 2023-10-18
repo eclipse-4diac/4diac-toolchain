@@ -26,7 +26,7 @@ if (WIN32)
   file(REMOVE include/compat/pthread.h)
   file(COPY ${CGET_RECIPE_DIR}/inet_pton.h DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/include/compat/)
   file(COPY ${CGET_RECIPE_DIR}/getentropy_win.c DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/crypto/compat/)
-  add_compile_options(-include inet_pton.h -Wno-unused-function)
+  add_compile_options(-include ${CMAKE_CURRENT_SOURCE_DIR}/include/compat/inet_pton.h -Wno-unused-function)
 endif()
 
 option(NO_APPS "only build library")

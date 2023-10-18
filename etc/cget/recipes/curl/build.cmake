@@ -30,4 +30,8 @@ set(HAVE_GLIBC_STRERROR_R__TRYRUN_OUTPUT "" CACHE STRING "")
 
 add_definitions(-DCURL_CA_FALLBACK=1)
 
+if (WIN32)
+       add_compile_definitions(_WIN32_WINNT=0x0501)
+endif()
+
 include(${CGET_CMAKE_ORIGINAL_SOURCE_FILE})
