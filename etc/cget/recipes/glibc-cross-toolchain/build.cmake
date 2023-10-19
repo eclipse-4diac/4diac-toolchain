@@ -31,7 +31,7 @@ endif()
 set(cache_dir "${CGET_PREFIX}/download-cache")
 
 # download pre-built toolchains
-set(bootlin_version "bleeding-edge-2021.11-1")
+set(bootlin_version "stable-2022.08-1")
 macro(add_prebuilt_toolchain triple target hash)
   list(FIND TARGETS "${triple}" index)
   if (index GREATER_EQUAL 0)
@@ -43,11 +43,11 @@ macro(add_prebuilt_toolchain triple target hash)
 endmacro()
 
 add_prebuilt_toolchain("x86_64-linux-gnu" "x86-64-core-i7"
-  "a3dbfcd3347a72ca344ae77882f929615776ea9b1b058eeea0a0915e7db89b69")
+  "7a31f72e6dc378eac8a97b0915b3619ba95c79f73046d052539c44f91bee9a02")
 add_prebuilt_toolchain("arm-linux-gnueabihf" "armv7-eabihf"
-  "1d2b488d047d1a1694305613adb918167a36bf0857cd6bda3ce87a0e4c2b7f28")
+  "64329b3e72350ceda65997368395a945ef83769013d82414dc5f2021c33f2d44")
 add_prebuilt_toolchain("aarch64-linux-gnu" "aarch64"
-  "55b90e0e844ac02a7fc3352be42b7cb9bb3ec582c23649dbb77e05c60eb84434")
+  "844df3c99508030ee9cb1152cb182500bb9816ff01968f2e18591d51d766c9e7")
 
 # extract downloaded toolchains and generate toolchain file
 foreach (ARCH IN LISTS TARGETS)
