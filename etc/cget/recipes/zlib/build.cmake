@@ -35,6 +35,7 @@ set_target_properties(zlib PROPERTIES OUTPUT_NAME z)
 set_target_properties(zlibstatic PROPERTIES OUTPUT_NAME zx)
 
 install(TARGETS zlib EXPORT ${CMAKE_PROJECT_NAME} DESTINATION lib)
+install(FILES zlib.h ${CMAKE_CURRENT_BINARY_DIR}/zconf.h DESTINATION include)
 
 include(toolchain-utils)
 install_export_config()
