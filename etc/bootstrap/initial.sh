@@ -123,8 +123,8 @@ EOF
 	if ! type sha256sum > /dev/null; then
 		msg "WARNING: sha256sum not found, not verifying archives."
 	elif [ "$hash" != 0 ] && [ "$(sha256sum < "$download")" != "$hash  -" ]; then
-		die "SHA256 checksum for $1 doesn't match expected value $hash"
 		mv "$download" "$download.broken"
+		die "SHA256 checksum for $1 doesn't match expected value $hash"
 	fi
 }
 
@@ -190,10 +190,9 @@ prepare_bootstrap() {
 	stage "Preparing bootstrap..."
 	with_system_tools mkdir -p bootstrap
 	with_system_tools rm -rf bootstrap/etc
-	with_system_tools cp -r etc bootstrap
+	with_system_tools cp -r etc *.md install-crosscompiler.* cross-env.sh bootstrap
 	with_system_tools ln -sf ../download-cache bootstrap/
 	bootstrap="$PWD/bootstrap"
-	with_system_tools cp README.rst cross-env.sh install-toolchain.* bootstrap
 }
 
 # Download a suitable initial compiler that should work without installation

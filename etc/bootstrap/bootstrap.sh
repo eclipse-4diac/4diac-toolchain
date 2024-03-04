@@ -77,7 +77,7 @@ if [ -z "${target#*-w64-mingw32}" ]; then
 	"${toolchain}/${target}/bin/${target}-gcc" -municode -o "bin/$1.exe" etc/bootstrap/windows-script-wrap.c -s -lshlwapi
 fi
 
-cp "${toolchain}/cross-env.sh" "${toolchain}/install-toolchain".* "${toolchain}/README.rst" .
+cp "${toolchain}/cross-env.sh" "${toolchain}"/install-crosscompiler.* "${toolchain}"/*.md .
 
 # install remaining build tools
 cget install busybox gnumake cmake ninja ccache flex byacc git putty python lzip 7zip remake meson patchelf $builddir -G Ninja
