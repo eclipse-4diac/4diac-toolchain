@@ -83,18 +83,18 @@ endfunction()
 # download <url>, check that it has <sha256hash>; variable SOURCE_<tag> is set
 # to final filename, which will be <filename> in some cache directory
 function(download_extra_source tag filename url sha256hash)
-  set(cache_dir "${CGET_PREFIX}/.cache/cget/")
-	file(MAKE_DIRECTORY "${cache_dir}/sha256-${sha256hash}")
+  set(cache_dir "${TOOLCHAINS_ROOT}/download-cache/")
+  file(MAKE_DIRECTORY "${cache_dir}/sha256-${sha256hash}")
   set(file "${cache_dir}/sha256-${sha256hash}/${filename}")
-	if (NOT EXISTS "${file}")
-	  message("Downloading ${url}...")
-	  file(DOWNLOAD "${url}" "${file}" EXPECTED_HASH SHA256=${sha256hash})
-	endif()
-	file(SHA256 "${file}" file_hash)
-	if (NOT "${sha256hash}" STREQUAL "${file_hash}")
-	  message(FATAL_ERROR "Invalid checksum for ${file}!")
-	endif()
-	set("SOURCE_${tag}" "${file}" PARENT_SCOPE)
+  if (NOT EXISTS "${file}")
+    message("Downloading ${url}...")
+    file(DOWNLOAD "${url}" "${file}" EXPECTED_HASH SHA256=${sha256hash})
+  endif()
+  file(SHA256 "${file}" file_hash)
+  if (NOT "${sha256hash}" STREQUAL "${file_hash}")
+    message(FATAL_ERROR "Invalid checksum for ${file}!")
+  endif()
+  set("SOURCE_${tag}" "${file}" PARENT_SCOPE)
 endfunction()
 
 
@@ -125,10 +125,10 @@ function(install_export_config)
   set(export_name "${ARGV0}")
   set(namespace_name "${ARGV1}")
   if (NOT export_name)
-	  set(export_name "${CMAKE_PROJECT_NAME}")
+    set(export_name "${CMAKE_PROJECT_NAME}")
   endif()
   if (NOT namespace_name)
-	  set(namespace_name "${export_name}")
+    set(namespace_name "${export_name}")
   endif()
 
 install(CODE "
@@ -139,42 +139,42 @@ install(CODE "
 ")
 
   install(EXPORT ${export_name} DESTINATION share/cmake/${export_name}/export
-	  NAMESPACE ${namespace_name}::
-	  EXPORT_LINK_INTERFACE_LIBRARIES)
+    NAMESPACE ${namespace_name}::
+    EXPORT_LINK_INTERFACE_LIBRARIES)
 
   include(CMakePackageConfigHelpers)
 
   get_cmake_property(vnames VARIABLES)
   set(pkgs "")
   foreach (name ${vnames})
-	  if (name MATCHES "[a-zA-Z0-9_-]*_CONSIDERED_VERSIONS")
-	    string(REPLACE "_CONSIDERED_VERSIONS" "" name ${name})
-	    if (${name}_FOUND)
-		    set(pkgs "${pkgs}find_package(${name} CONFIG)\n")
-	    endif()
-	  endif()
+    if (name MATCHES "[a-zA-Z0-9_-]*_CONSIDERED_VERSIONS")
+      string(REPLACE "_CONSIDERED_VERSIONS" "" name ${name})
+      if (${name}_FOUND)
+        set(pkgs "${pkgs}find_package(${name} CONFIG)\n")
+      endif()
+    endif()
   endforeach()
 
   file(WRITE ${export_name}-config.cmake.in
-	  "set(${export_name}_VERSION ${CMAKE_PROJECT_VERSION})\n"
-	  "${pkgs}"
-	  "@PACKAGE_INIT@\n"
-	  "include(\${CMAKE_CURRENT_LIST_DIR}/export/${export_name}.cmake)\n"
-	)
+    "set(${export_name}_VERSION ${CMAKE_PROJECT_VERSION})\n"
+    "${pkgs}"
+    "@PACKAGE_INIT@\n"
+    "include(\${CMAKE_CURRENT_LIST_DIR}/export/${export_name}.cmake)\n"
+  )
 
   configure_package_config_file(
-	  ${export_name}-config.cmake.in
-	  ${export_name}-config.cmake
-	  INSTALL_DESTINATION share/cmake/${export_name}
-	  PATH_VARS CMAKE_INSTALL_PREFIX)
+    ${export_name}-config.cmake.in
+    ${export_name}-config.cmake
+    INSTALL_DESTINATION share/cmake/${export_name}
+    PATH_VARS CMAKE_INSTALL_PREFIX)
 
   write_basic_package_version_file(
-	  ${CMAKE_CURRENT_BINARY_DIR}/${export_name}-config-version.cmake
-	  VERSION ${CMAKE_PROJECT_VERSION}
-	  COMPATIBILITY SameMajorVersion)
+    ${CMAKE_CURRENT_BINARY_DIR}/${export_name}-config-version.cmake
+    VERSION ${CMAKE_PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion)
 
   install(FILES
-	  ${CMAKE_CURRENT_BINARY_DIR}/${export_name}-config.cmake
-	  ${CMAKE_CURRENT_BINARY_DIR}/${export_name}-config-version.cmake
-	  DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/${export_name})
+    ${CMAKE_CURRENT_BINARY_DIR}/${export_name}-config.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/${export_name}-config-version.cmake
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/${export_name})
 endfunction()

@@ -1,4 +1,3 @@
-====================================================
 Reliable Cross-Platform Cross-Compilation Toolchains
 ====================================================
 
@@ -25,37 +24,34 @@ OS.
 Installation
 ============
 
-The easiest way to install the toolchain environment is through a pre-built
-toolchain archive. They are named like ``<OS>-toolchain-<machine>.tar.gz``,
-e.g. ``Linux-toolchain-i686-linux-musl.tar.gz`` for an x86 Linux environment.
-They may also end in ``.zip``.
+If using this as part of the 4diac FORTE build environment (4diac-fbe), you
+don't need to do anything, 4diac-fbe handles this automatically for you.
+
+When using this as a standalone toolchain, the easiest way to install the
+toolchain environment is through a binary release. Check out the `release`
+branch of `4diac-toolchains` and run `etc/install-Linux.sh` or
+`etc/install-Windows.cmd` (as appropriate). This will securely download and
+install a pre-built release of the base toolchain for native compilation. To
+install cross-compilers for additional targets, see below.
 
 These packages do not need administrative rights and can be installed into
 any folder.  In fact, there is no actual installation, you can extract the
-archive wherever you want and it works out of the box.
+binary archive wherever you want and it works out of the box.
 
 Some recommendations: You should use a new, empty folder as destination.  As
 some programs do not like spaces in file names or very long path names, try
 to use a destination path that is short and without any spaces anywhere.
 
-Windows users can use ``install-toolchain.cmd`` for easy installation. Put the
-``.cmd`` into the same destination directory as the ``.zip`` and double-click
-``install-toolchain.cmd``.
-
 
 Adding cross-compiler toolchains later
 ======================================
 
-The easiest way to install additional cross-compiler toolchains is though
-binary archives someone else built for you.
-
-Pre-built compilers are in archives named ``<OS>-cross-<CPU>_<target>.tar.lz``,
-for example ``Linux-cross-i686_arm-linux-musleabihf.tar.lz`` for a
-cross-compiler that runs on an intel CPU and produces binaries for ARM CPUs.
-
-If you have such archives for additional cross-compilers, put them inside your
-toolchain directory and run the install script again.  It will detect and
-install them properly.
+Use `./install-crosscompiler.sh` (or `.cmd` on Windows) to add pre-built
+cross-compilers. See `etc/crosscompilers.sha256sum` for a list of available
+targets. If your target is not available as a pre-built release, use `bin/sh
+etc/toolchain.sh <target-triple>` to build one from source. This probably
+only works on Linux, so write a ticket in the issue tracker if you need
+another target on Windows.
 
 
 Usage with plain CMake

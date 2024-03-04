@@ -42,14 +42,20 @@ the system they are running on.  They can be distributed in binary archives (but
 mind the licensing note below).
 
 To create base toolchain and cross-compiler archives, use script
-``etc/package.sh``.  It will package up the current toolchain environment in
-the exact state it is in, with all the currently installed tools.  It will
-separate any cross-compilers into separate archives and different host
-systems in separate subdirectories.
+``etc/package.sh <release-tag>``.  It will package up the current toolchain
+environment in the exact state it is in, with all the currently installed
+tools.  It will separate any cross-compilers into separate archives and
+different host systems in separate subdirectories.
 
-The resulting archives are placed in the ``dist`` subdirectory alongside the
-toplevel README and the install scripts.
+The resulting archives are placed in the ``release-<release-tag>`` subdirectory
+alongside an install script for each platform. The generated install scripts
+will download missing files from a canonical release server. They have SHA256
+checksums hardcoded to ensure authenticity of downloaded binaries.
 
+If you build additional cross-toolchains after packaging, runr
+``package.sh <release-tag> -a``, which will package any new toolchain. It will
+also update the core toolchain archives, as they contain all known SHA256
+checksums, and the install scripts, as they contain the root SHA256 checksum.
 
 
 Bootstrapping in individual steps

@@ -1,5 +1,5 @@
 /cget
-/dist
+/release-*
 /download-cache
 /.cache
 /bin
@@ -20,3 +20,4 @@
 /toolchains.zip
 /bootstrap
 /bootstrap-*.log
+/etc/crosscompilers.sha256sum
