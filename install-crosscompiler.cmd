@@ -10,12 +10,8 @@
 @@REM  Contributors:
 @@REM     Jörg Walter - initial implementation
 @@REM  *******************************************************************************/
-@@cd %~dp0 & %WINDIR%\system32\windowspowershell\v1.0\powershell.exe -Command Invoke-Expression $([String]::Join(';',(Get-Content 'install-crosscompiler.cmd') -notmatch '^^@@.*$')) & goto :EOF
+@@cd %~dp0 & %WINDIR%\system32\windowspowershell\v1.0\powershell.exe -Command Invoke-Expression $([String]::Join(';',(Get-Content %~nx0) -notmatch '^^@@.*$')) & goto :EOF
 
-if ($args.count -lt 1) {
-	[void][Reflection.Assembly]::LoadWithPartialName('Microsoft.VisualBasic')
-	$arch = [Microsoft.VisualBasic.Interaction]::InputBox('Enter target architecture (e.g., arm-linux-musleabi)', 'Install cross-compiler')
-	bin\sh.exe ./etc/install-crosscompiler.sh $arch
-} else {
-	bin\sh.exe ./etc/install-crosscompiler.sh $args
-}
+[void][Reflection.Assembly]::LoadWithPartialName('Microsoft.VisualBasic')
+$arch = [Microsoft.VisualBasic.Interaction]::InputBox('Enter target architecture (e.g., arm-linux-musleabi)', 'Install cross-compiler')
+bin\sh.exe ./install-crosscompiler.sh $arch
