@@ -10,7 +10,11 @@
 @@REM  Contributors:
 @@REM     Jörg Walter - initial implementation
 @@REM  *******************************************************************************/
-@@cd %~dp0 & %WINDIR%\system32\windowspowershell\v1.0\powershell.exe -Command Invoke-Expression $([String]::Join(';',(Get-Content 'install-toolchain.cmd') -notmatch '^^@@.*$')) & goto :EOF
+@@cd %~dp0 & %WINDIR%\system32\windowspowershell\v1.0\powershell.exe -Command Invoke-Expression $([String]::Join(';',(Get-Content %~nx0) -notmatch '^^@@.*$')) & goto :EOF
+
+if (Test-Path "cget\cget.sh") {
+	cd ..
+}
 
 if (-not (Test-Path "bin\sh.exe")) {
 	$baseurl = "https://sourceforge.net/projects/fordiac/files/4diac-fbe"
@@ -34,7 +38,7 @@ if (-not (Test-Path "bin\sh.exe")) {
 	$shap = New-Object -com Shell.Application
 	$src = $shap.NameSpace("$PWD\$download")
 	$dest = $shap.NameSpace("$PWD\")
-	$dest.CopyHere($src.Items(), 24)
+	$dest.CopyHere($src.Items(), 0x10)
 
 	copy C:\Windows\system32\cmd.exe bin\cmd.exe
 	bin\busybox.exe --install bin\
