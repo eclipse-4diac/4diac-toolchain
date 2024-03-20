@@ -21,6 +21,8 @@ cd "$(dirname "$0")/../.."
 {
 	./etc/bootstrap/initial.sh
 	./etc/toolchain.sh
-	./etc/bootstrap/bootstrap.sh x86_64-w64-mingw32
-	./toolchain-x86_64-w64-mingw32/etc/toolchain.sh
+	for host in x86_64-w64-mingw32 aarch64-linux-musl; do
+		./etc/bootstrap/bootstrap.sh "$host"
+		./toolchain-${host}/etc/toolchain.sh
+	done
 } 2>&1 | tee bootstrap-everything.log

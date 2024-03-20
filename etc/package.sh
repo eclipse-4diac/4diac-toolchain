@@ -51,11 +51,13 @@ detect_host() {
 		Windows)
 			# remove all symlinks from the windows toolchains
 			find *-*-*/ -type l -exec rm {} +
+			installarch="" # not used for windows, always x86_64
 			out="$dist/$hostos-toolchain-"$host".zip"
 			nativearch() { rm -f "$out"; 7za a -Tzip "$out" "$@"; }
 			excl="-xr!";;
 		*)
 			out="$dist/$hostos-toolchain-"$host".tar.gz"
+			installarch="-${host%%-*}"
 			nativearch() { rm -f "$out"; tar c "$@" | 7za a -Tgzip -si "$out"; }
 			excl="--exclude=";;
 	esac
@@ -111,7 +113,7 @@ for toolchain in "$base" "$base"/toolchain-*/; do
 	hash="$(sha256sum "$out")"
 	hash="${hash%% *}"
 
-	sed -i -e "s/release='.*'/release='$release'/;s/hash='[0-9a-f]\{64\}'/hash='$hash'/" "$dist/4diac-toolchain-$release-install-$hostos".*
+	sed -i -e "s/release='.*'/release='$release'/;s/hash='[0-9a-f]\{64\}'/hash='$hash'/" "$dist/4diac-toolchain-$release-install-$hostos$installarch".*
 done
 
 # update installer scripts in base repo so that final checksums can be committed to git
