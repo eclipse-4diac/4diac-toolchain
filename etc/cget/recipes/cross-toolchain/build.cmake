@@ -25,8 +25,8 @@ set(TARGETS
   "i686-linux-musl"
   "x86_64-linux-muslx32"
   "x86_64-linux-musl"
-  "microblaze-linux-musl"
   "riscv64-linux-musl"
+  "riscv32-unknown-elf,--with-arch=rv32i --with-abi=ilp32" # FIXME: this may need to be rv32i_zicsr_zifencei, see https://github.com/riscv-collab/riscv-gnu-toolchain/issues/1315
   "i686-w64-mingw32"
   "x86_64-w64-mingw32"
 	CACHE STRINGS "List of Targets (optionally with comma-separated default CPU) to build cross-compilers for, e.g. i686-w64-mingw32;aarch64-linux-musl;arm-linux-musleabihf,--with-cpu=arm1176jzf-s")
@@ -76,15 +76,15 @@ set(BUILDPREFIX2 "${TOOLCHAINS_ROOT}/${BUILD_ARCH}/${BUILD_ARCH}/bin/")
 # create config file
 file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/config.mak
   "COMPILER = CC='${ccache}${CMAKE_C_COMPILER} -static --static' CXX='${ccache}${CMAKE_CXX_COMPILER} -static --static'\n"
-  "BINUTILS_VER = 2.40\n"
-  "GCC_VER = 11.3.0\n"
-  "MUSL_VER = 1.2.4\n"
+  "BINUTILS_VER = 2.42\n"
+  "GCC_VER = 13.2.0\n"
+  "MUSL_VER = 1.2.5\n"
   "GMP_VER = 6.2.1\n"
   "MPC_VER = 1.3.1\n"
   "MPFR_VER = 4.2.0\n"
   "MINGW_VER = v10.0.0\n"
   "LINUX_VER = 6.1.31\n"
-  "NEWLIB_VER = 4.1.0\n"
+  "NEWLIB_VER = 4.3.0.20230120\n"
   "COMMON_CONFIG += CC_FOR_BUILD=\"${BUILDPREFIX}gcc -static\"\n"
   "COMMON_CONFIG += CXX_FOR_BUILD=\"${BUILDPREFIX}g++ -static\"\n"
   "COMMON_CONFIG += CFLAGS_FOR_BUILD=-static\n"
@@ -138,8 +138,16 @@ file(WRITE "hashes/mingw-w64-v10.0.0.tar.bz2.sha1"
   "56143558d81dae7628a232ca7582b947e65392b1  mingw-w64-v10.0.0.tar.bz2\n")
 file(WRITE "hashes/newlib-4.1.0.tar.gz.sha1"
   "3f2536b591598e8e5c36f20f4d969266f81ab1ed  newlib-4.1.0.tar.gz\n")
+file(WRITE "hashes/newlib-4.3.0.20230120.tar.gz.sha1"
+  "1fe9b5ba44a4dd0f1fc49831964053458a834ef6  newlib-4.3.0.20230120.tar.gz\n")
 file(WRITE "hashes/binutils-2.40.tar.gz.sha1"
   "51cf8aac159473418688c62ec52f3653d1b8e0a7  binutils-2.40.tar.gz\n")
+file(WRITE "hashes/binutils-2.42.tar.gz.sha1"
+  "0332737873c121c43ec3860a9c53647337c38085  binutils-2.42.tar.gz\n")
+file(WRITE "hashes/gcc-13.2.0.tar.xz.sha1"
+  "5f95b6d042fb37d45c6cbebfc91decfbc4fb493c  gcc-13.2.0.tar.xz\n")
+file(WRITE "hashes/musl-1.2.5.tar.gz.sha1"
+  "36210d3423172a40ddcf83c762207c5f760b60a6  musl-1.2.5.tar.gz\n")
 
 # add newlib and mingw patches, then extract sources
 # mingw patch is based on https://github.com/jprjr/mingw-cross-make
@@ -154,9 +162,11 @@ add_custom_command(
   COMMAND make -w -j${CPUS} TARGET=${ARCH} HOST=${HOST}
                OUTPUT=${CMAKE_CURRENT_BINARY_DIR}/${ARCH} extract_all
   # libgomp forces -Werror, but has warnings
-  COMMAND sed -i -e 's/-Werror//' gcc-11.3.0/libgomp/configure
+  COMMAND sed -i -e 's/-Werror//' gcc-*/libgomp/configure
+  # gcc misdetects the libgloss subdirectory (riscv64 instead of riscv)
+  COMMAND sed -i -e 's/libgloss_dir=arm/libgloss_dir=arm\;\;riscv*-*-*\)libgloss_dir=riscv/' gcc-*/configure
   # musl+gcc-11 bug that will be fixed in gcc-12
-  COMMAND sed -i -e 's/-std=gnu++17/-std=gnu++17 -nostdinc++/' gcc-11.3.0/libstdc++-v3/src/c++17/Makefile.in
+  #COMMAND sed -i -e 's/-std=gnu++17/-std=gnu++17 -nostdinc++/' gcc-11.3.0/libstdc++-v3/src/c++17/Makefile.in
   COMMAND touch .extracted
   )
 add_custom_target(patched-sources DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/.extracted)
@@ -170,11 +180,10 @@ foreach (ARCH IN LISTS TARGETS)
   string(REGEX REPLACE "^," "" MCPU "${MCPU}")
   string(REGEX REPLACE ",.*" "" ARCH "${ARCH}")
 
+  set(makecpus ${CPUS})
   if (ARCH MATCHES "mingw32")
-    # recent mingw toolchain versions have a race condition in parallel builds
+    # some mingw toolchain versions have a race condition in parallel builds, set to 1 if you encounter this bug
     set(makecpus 1)
-  else()
-    set(makecpus ${CPUS})
   endif()
   add_custom_command(
     OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/.${ARCH}-installed

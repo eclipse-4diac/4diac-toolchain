@@ -38,5 +38,5 @@ for i in "$@"; do
 		*) echo "Unknown target: $i" >&2; exit 1;;
 	esac
 	[ -f "$i".cmake ] && echo "Skipping $i, already installed." && continue
-	"${nativedir}/bin/cget" -p . install -U "$pkg" -DTARGETS="$i" || exit 1
+	"${nativedir}/bin/cget" -p . install -U "$pkg" -DTARGETS="$i" 2>&1 | tee "build-toolchain-$i.log" || exit 1
 done

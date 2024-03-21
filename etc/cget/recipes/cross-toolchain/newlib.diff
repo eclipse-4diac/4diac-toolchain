@@ -13,7 +13,7 @@ diff -ru src.orig/litecross/Makefile src/litecross/Makefile
 +NEWLIB_SRCDIR =
 +endif
 +
-+ifneq ($(findstring none,$(TARGET)),)
++ifneq ($(findstring unknown,$(TARGET))$(findstring none,$(TARGET)),)
 +MUSL_SRCDIR =
 +LINUX_SRCDIR =
 +MINGW_SRCDIR =
@@ -111,7 +111,7 @@ diff -ru src.orig/Makefile src/Makefile
  MPFR_VER = 4.2.0
  LINUX_VER = 6.1.31
  MINGW_VER = v7.0.0
-+NEWLIB_VER = 4.1.0
++NEWLIB_VER = 4.3.0.20230120
  
  GNU_SITE = https://ftpmirror.gnu.org/gnu
  GCC_SITE = $(GNU_SITE)/gcc
@@ -156,6 +156,19 @@ diff -ru src.orig/Makefile src/Makefile
  	"-include $(REL_TOP)/config.mak"
  
  all: | $(SRC_DIRS) $(BUILD_DIR) $(BUILD_DIR)/Makefile $(BUILD_DIR)/config.mak
+--- src.orig/patches/newlib-4.3.0.20230120/0001-mbstring.diff	2023-10-19 12:40:01.262173049 +0200
++++ src/patches/newlib-4.3.0.20230120/0001-mbstring.diff	2023-10-19 12:39:48.205856406 +0200
+@@ -0,0 +1,10 @@
++--- a/newlib/libc/include/stdlib.h	2023-10-19 12:34:17.645891114 +0200
+++++ b/newlib/libc/include/stdlib.h	2023-10-19 12:34:35.294282578 +0200
++@@ -15,6 +15,7 @@
++ #define __need_NULL
++ #include <stddef.h>
++ 
+++#include <sys/_types.h>
++ #include <sys/reent.h>
++ #include <sys/cdefs.h>
++ #include <machine/stdlib.h>
 --- src.orig/patches/newlib-4.1.0/0001-mbstring.diff	2023-10-19 12:40:01.262173049 +0200
 +++ src/patches/newlib-4.1.0/0001-mbstring.diff	2023-10-19 12:39:48.205856406 +0200
 @@ -0,0 +1,10 @@
