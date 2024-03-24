@@ -27,8 +27,8 @@ baseurl="https://sourceforge.net/projects/fordiac/files/4diac-fbe"
 triplet="x86_64-linux-musl"
 file="$host-toolchain-$triplet.tar.gz"
 
-release='2024-03'
-hash='9d5cdd6930bd14bafff0b9619dc1459d7cad0fb66153c07d37f3e845fcada8b4'
+release='2024-04'
+hash='69dbd1f149bd86a25466ee9ba92d4d1734b6d34655dbf3303ec1607079e7abe5'
 
 fetch_file_authenticated() {
 	download="$1"
