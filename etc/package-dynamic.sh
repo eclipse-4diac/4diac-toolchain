@@ -87,15 +87,15 @@ done
 interp="$(strings "$bin" | grep '^/.*/ld' | head -n 1)"
 interp="${interp##*/}"
 find "$toolchain" -name "$interp" -exec cp {} "$bindir/" ';'
-patchelf --set-interpreter "./bundle/$interp" "$bin"
+#patchelf --set-interpreter "./bundle/$interp" "$bin"
 
 
-cat << 'EOF' > "$bindir/../forte"
+cat << EOF > "$bindir/../forte"
 #!/bin/sh
-export FORTE_RUNDIR="$PWD"
-cd "$(dirname "$(readlink -f "$0")")"
+bundle="\$(cd "\$(dirname "\$0")"; pwd)/bundle"
 unset LD_PRELOAD
-exec "$PWD/bundle/forte" "$@"
+unset LD_LIBRARY_PATH
+exec "\$bundle/$interp" --library-path "\$bundle" --inhibit-cache --argv0 "\$0" "\$bundle/forte" "\$@"
 EOF
 chmod 755 "$bindir/../forte"
 
