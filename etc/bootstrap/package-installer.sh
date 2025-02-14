@@ -29,7 +29,7 @@ mkdir -p "$output"
 hosttriplet="$(bin/gcc --version)"
 hosttriplet="${hosttriplet%%-gcc*}"
 
-installer="$output/4diac-fbe-installer-v1"
+installer="$output/4diac-fbe-installer-v2"
 
 if [ -f "$installer-$hosttriplet.tar.gz" -a "$1" != "-f" ]; then
 	echo "Installer $installer already exists. Edit $0 to create a new version."
