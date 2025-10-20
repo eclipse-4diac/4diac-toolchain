@@ -10,8 +10,8 @@
 #    Jörg Walter - initial implementation
 # *******************************************************************************/
 
-PROJECT(busybox C)
-CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
+project(busybox C)
 
 include(toolchain-utils)
 

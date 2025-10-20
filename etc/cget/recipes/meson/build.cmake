@@ -11,8 +11,8 @@
 #    Jörg Walter - initial implementation
 # *******************************************************************************/
 
-project(meson NONE)
 cmake_minimum_required(VERSION 3.13)
+project(meson NONE)
 
 include(toolchain-utils)
 

@@ -11,8 +11,8 @@
 #    Jörg Walter - initial implementation
 # *******************************************************************************/
 
+cmake_minimum_required(VERSION 3.10)
 project(7zip C CXX)
-cmake_minimum_required(VERSION 3.5)
 
 if (WIN32)
   # use the official release for simplicity

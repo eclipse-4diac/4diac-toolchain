@@ -11,8 +11,8 @@
 #    Jörg Walter - initial implementation
 # *******************************************************************************/
 
+cmake_minimum_required(VERSION 3.10)
 project(python C)
-cmake_minimum_required(VERSION 3.5)
 
 include(toolchain-utils)
 set(pymainver "3.9")

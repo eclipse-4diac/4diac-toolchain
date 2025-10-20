@@ -11,8 +11,8 @@
 #    Jörg Walter - initial implementation
 # *******************************************************************************/
 
+cmake_minimum_required(VERSION 3.10)
 project(putty C)
-cmake_minimum_required(VERSION 3.5)
 
 include(${CGET_CMAKE_ORIGINAL_SOURCE_FILE})
 

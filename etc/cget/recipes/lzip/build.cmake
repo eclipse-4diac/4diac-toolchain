@@ -11,8 +11,8 @@
 #    Jörg Walter - initial implementation
 # *******************************************************************************/
 
-PROJECT(lzip C)
-CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
+project(lzip C)
 
 add_executable(lzip carg_parser.c LzFind.c LzmaEnc.c LzmaDec.c main.c)
 target_compile_definitions(lzip PRIVATE PROGVERSION=1.10)
