@@ -31,23 +31,23 @@ endif()
 set(cache_dir "${CGET_PREFIX}/download-cache")
 
 # download pre-built toolchains
-set(bootlin_version "bleeding-edge-2024.02-1")
+set(bootlin_version "bleeding-edge-2025.08-1")
 macro(add_prebuilt_toolchain triple target hash)
   list(FIND TARGETS "${triple}" index)
   if (index GREATER_EQUAL 0)
     download_extra_source(${triple}
-      "${target}--glibc--${bootlin_version}.tar.bz2"
-      "https://toolchains.bootlin.com/downloads/releases/toolchains/${target}/tarballs/${target}--glibc--${bootlin_version}.tar.bz2"
+      "${target}--glibc--${bootlin_version}.tar.xz"
+      "https://toolchains.bootlin.com/downloads/releases/toolchains/${target}/tarballs/${target}--glibc--${bootlin_version}.tar.xz"
       "${hash}")
   endif()
 endmacro()
 
 add_prebuilt_toolchain("x86_64-linux-gnu" "x86-64-core-i7"
-  "45cb05f2d1ff7f62131d172f90fae321753396ef477b549ca79a50fba48edba7")
+  "3777ad89e6d60bc8fafb83b6b74284b6c56aee20ea00e51dfa466800e98dcdb9")
 add_prebuilt_toolchain("arm-linux-gnueabihf" "armv7-eabihf"
-  "db5178feac8a02f3dc6fab16448d0ca2835bc915ca0453f6aba6510b7dccfb5d")
+  "eed0e672d305ac08d444685b48eafb291c63387ef7916c1615354ebfb3d1ebdc")
 add_prebuilt_toolchain("aarch64-linux-gnu" "aarch64"
-  "09a5a8a59403e3df7a557014d0f9463e8e366c5431656252f0ce3fc00ecfc050")
+  "54875d12829a792b8d4d1c9fb1f736afc60f514b0d260616f188eafafaac7cb5")
 
 # extract downloaded toolchains and generate toolchain file
 foreach (ARCH IN LISTS TARGETS)
