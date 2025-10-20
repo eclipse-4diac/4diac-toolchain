@@ -11,8 +11,8 @@
 #    Jörg Walter - initial implementation
 # *******************************************************************************/
 
-PROJECT(socat C)
-CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
+project(socat C)
 
 install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/socat${CMAKE_EXECUTABLE_SUFFIX} DESTINATION bin)
 

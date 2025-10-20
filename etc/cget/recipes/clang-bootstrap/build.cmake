@@ -11,8 +11,8 @@
 #    Jörg Walter - initial implementation
 # *******************************************************************************/
 
-project(clang-bootstrap C CXX)
 cmake_minimum_required(VERSION 3.19)
+project(clang-bootstrap C CXX)
 
 include(toolchain-utils)
 include(${CGET_RECIPE_DIR}/../clang-bootstrap/helpers.cmake)

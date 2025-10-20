@@ -12,7 +12,7 @@
 # *******************************************************************************/
 
 PROJECT(CURL C)
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 
 set(CURL_STATICLIB ON CACHE BOOL "")
 set(CURL_DISABLE_LDAP ON CACHE BOOL "")

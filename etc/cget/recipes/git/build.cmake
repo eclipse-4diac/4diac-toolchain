@@ -11,8 +11,8 @@
 #    Jörg Walter - initial implementation
 # *******************************************************************************/
 
+cmake_minimum_required(VERSION 3.10)
 project(git C)
-cmake_minimum_required(VERSION 3.5)
 
 include(toolchain-utils)
 
