@@ -12,7 +12,7 @@
 # *******************************************************************************/
 
 PROJECT(CURL C)
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.5)
 
 set(CURL_STATICLIB ON CACHE BOOL "")
 set(CURL_DISABLE_LDAP ON CACHE BOOL "")
@@ -20,6 +20,7 @@ set(CMAKE_USE_LIBSSH2 OFF CACHE BOOL "")
 set(CMAKE_USE_GSSAPI OFF CACHE BOOL "")
 set(CURL_ENABLE_SSL ON CACHE BOOL "")
 set(CURL_USE_OPENSSL ON CACHE BOOL "")
+set(CURL_USE_LIBPSL OFF CACHE BOOL "")
 set(ENABLE_UNIX_SOCKETS OFF CACHE BOOL "")
 set(ENABLE_MANUAL OFF CACHE BOOL "")
 
