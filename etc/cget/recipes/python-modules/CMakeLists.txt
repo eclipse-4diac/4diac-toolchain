@@ -1,25 +1,40 @@
-project(python-modules)
+#********************************************************************************
+# Copyright (c) 2018, 2023 OFFIS e.V.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Eclipse Public License 2.0 which is available at
+# http://www.eclipse.org/legal/epl-2.0.
+#
+# SPDX-License-Identifier: EPL-2.0
+# 
+# Contributors:
+#    Jörg Walter - initial implementation
+# *******************************************************************************/
+
+project(python-modules NONE)
 cmake_minimum_required(VERSION 3.13)
 
 include(toolchain-utils)
 python_detect_version()
 
-download_extra_source(get_pip get-pip.py
-  https://bootstrap.pypa.io/pip/3.5/get-pip.py
-  311afebb7cdd310eb3a3a6bb6fffef53d84493db98c7cebf4008a18d3418c8be)
+set(pycmd ${CMAKE_COMMAND} -E env
+  HOME=${CGET_PREFIX}
+  PYTHONHOME=${CMAKE_CURRENT_BINARY_DIR}
+  PYTHONPATH=${TOOLCHAINS_ROOT}/lib/python${pymajor}
+  ${TOOLCHAINS_ROOT}/bin/python)
 
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib/python${pymajor}/site-packages)
 add_custom_target(pip ALL
-  COMMAND python ${SOURCE_get_pip}
-  COMMAND sed -e "s,^#!.*,#!/usr/bin/env python," -i ${CGET_PREFIX}/../bin/pip)
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib/python${pymajor}/site-packages
+  COMMAND ${CMAKE_COMMAND} -E tar xf ${CGET_PREFIX}/lib/python${pymajor}/ensurepip/_bundled/pip*.whl
+  COMMAND sed -e "'s/return glibc_version_string_confstr()/return None#/'" -i pip/_internal/utils/glibc.py
+  COMMAND sed -e "'s/not _have_compatible_abi([^)]*)/True/'" -i pip/_vendor/packaging/_manylinux.py)
 
-# # Extract the bootstrap pip and install it bare-bones; no pip script since
-# # functionality with a static python is extremely limited. This is really just
-# # for "python setup.py" support
-# add_custom_target(pip ALL
-#   COMMAND ${CMAKE_COMMAND} -E tar xf ${CGET_PREFIX}/../lib/python3.6/ensurepip/_bundled/pip*.whl
-#   COMMAND ${CMAKE_COMMAND} -E tar xf ${CGET_PREFIX}/../lib/python3.6/ensurepip/_bundled/setuptools*.whl)
-# install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/pip DESTINATION lib/python3.6/site-packages)
-# install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/setuptools DESTINATION lib/python3.6/site-packages)
+set(pipcommand ${pycmd} -m pip install --isolated --no-deps --force-reinstall)
 
-# locally bundled packages
-install(DIRECTORY "${CGET_RECIPE_DIR}/lib/." DESTINATION lib/python${pymajor}/site-packages)
+add_custom_target(six ALL DEPENDS pip COMMAND ${pipcommand} six==1.15.0)
+add_custom_target(setuptools ALL DEPENDS pip COMMAND ${pipcommand} setuptools==80.9.0)
+
+install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib DESTINATION .)
+install(PROGRAMS ${CGET_RECIPE_DIR}/pip DESTINATION bin)
+
