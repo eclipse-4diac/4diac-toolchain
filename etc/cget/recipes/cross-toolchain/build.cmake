@@ -79,17 +79,15 @@ endif()
 
 # create config file
 file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/config.mak
-	#"COMPILER = CC='${ccache}${CMAKE_C_COMPILER}' CXX='${ccache}${CMAKE_CXX_COMPILER}'\n"
-  "COMPILER = CC='${ccache}${CMAKE_C_COMPILER} -static --static' CXX='${ccache}${CMAKE_CXX_COMPILER} -static --static'\n"
-  "BINUTILS_VER = 2.42\n"
-  "GCC_VER = 13.2.0\n"
+  "BINUTILS_VER = 2.44\n"
+  "GCC_VER = 15.1.0\n"
   "MUSL_VER = 1.2.5\n"
-  "GMP_VER = 6.2.1\n"
+  "GMP_VER = 6.3.0\n"
   "MPC_VER = 1.3.1\n"
-  "MPFR_VER = 4.2.0\n"
-  "MINGW_VER = v10.0.0\n"
-  "LINUX_VER = 6.1.31\n"
-  "NEWLIB_VER = 4.3.0.20230120\n"
+  "MPFR_VER = 4.2.2\n"
+  "MINGW_VER = v13.0.0\n"
+  "LINUX_VER = 6.1.55\n"
+  "NEWLIB_VER = 4.5.0.20241231\n"
   "COMMON_CONFIG += CC_FOR_BUILD=\"${BUILDPREFIX}gcc -static\"\n"
   "COMMON_CONFIG += CXX_FOR_BUILD=\"${BUILDPREFIX}g++ -static\"\n"
   "COMMON_CONFIG += CFLAGS_FOR_BUILD=-static\n"
@@ -100,11 +98,10 @@ file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/config.mak
   "COMMON_CONFIG += LD_FOR_BUILD=${BUILDPREFIX2}ld\n"
   "COMMON_CONFIG += AR_FOR_BUILD=${BUILDPREFIX2}ar\n"
   "COMMON_CONFIG += RANLIB_FOR_BUILD=${BUILDPREFIX2}ranlib\n"
+  "COMMON_CONFIG += CC='${ccache}${CMAKE_C_COMPILER} -static --static' CXX='${ccache}${CMAKE_CXX_COMPILER} -static --static'\n"
   # LTO doesn't work for cross-building
-  "COMMON_CONFIG += CFLAGS='${CMAKE_C_FLAGS} ${EXTRA_CFLAGS} -fno-lto' CXXFLAGS='${CMAKE_CXX_FLAGS} ${EXTRA_CFLAGS} -fno-lto' LDFLAGS='${CMAKE_EXE_LINKER_FLAGS} -fno-lto' $(COMPILER)\n"
-  #"COMMON_CONFIG += CFLAGS='${CMAKE_C_FLAGS} -fno-lto -Dfdopen=fdopen' CXXFLAGS='${CMAKE_CXX_FLAGS} -fno-lto -Dfdopen=fdopen' LDFLAGS='${CMAKE_EXE_LINKER_FLAGS} -fno-lto' $(COMPILER)\n"
+  "COMMON_CONFIG += CFLAGS='${CMAKE_C_FLAGS} ${EXTRA_CFLAGS} -fno-lto' CXXFLAGS='${CMAKE_CXX_FLAGS} ${EXTRA_CFLAGS} -fno-lto' LDFLAGS='${CMAKE_EXE_LINKER_FLAGS} -fno-lto'\n"
   "COMMON_CONFIG += --with-debug-prefix-map=$(CURDIR)= --disable-nls --disable-shared --enable-deterministic-archives\n"
-  # the gprofng tool would add another dependency (bison), but gprofng isn't needed anyway
   "COMMON_CONFIG += --disable-gprofng --disable-gcov\n"
   "GCC_CONFIG += --enable-languages=c,lto,c++ --disable-multilib $(MCPU)\n"
   "GCC_CONFIG += --enable-libatomic --enable-threads=posix --enable-graphite --enable-libstdcxx-filesystem-ts=yes --disable-libstdcxx-pch --disable-lto --disable-win32-registry --disable-symvers --disable-plugin --disable-werror --disable-rpath --with-gnu-as --with-gnu-ld --disable-sjlj-exceptions --with-dwarf2 --enable-large-address-aware\n"
@@ -130,32 +127,10 @@ patch("${CMAKE_CURRENT_SOURCE_DIR}/Makefile" "http://isl.gforge.inria.fr/" "http
 
 
 # add mingw downloads
-file(WRITE "hashes/mingw-w64-v5.0.3.tar.bz2.sha1"
-  "96278378b829695007ce6a527278cba19cb829f2  mingw-w64-v5.0.3.tar.bz2\n")
-file(WRITE "hashes/mingw-w64-v5.0.4.tar.bz2.sha1"
-  "aa854d36acf575307b6b839f7ee12aa97f66af29  mingw-w64-v5.0.4.tar.bz2\n")
-file(WRITE "hashes/mingw-w64-v6.0.0.tar.bz2.sha1"
-  "4cffb043060d88d6bf0f382e4d92019263670ca6  mingw-w64-v6.0.0.tar.bz2\n")
-file(WRITE "hashes/mingw-w64-v7.0.0.tar.bz2.sha1"
-  "25940043c4541e3e59608dead9b6f75b5596d606  mingw-w64-v7.0.0.tar.bz2\n")
-file(WRITE "hashes/mingw-w64-v8.0.0.tar.bz2.sha1"
-  "c733a60e1e651ccd5d1ef1296cdc6f44f41a2cb0  mingw-w64-v8.0.0.tar.bz2\n")
-file(WRITE "hashes/mingw-w64-v9.0.0.tar.bz2.sha1"
-  "9c496ed063e085888d250cc461ec4d31d97b72f1  mingw-w64-v9.0.0.tar.bz2\n")
-file(WRITE "hashes/mingw-w64-v10.0.0.tar.bz2.sha1"
-  "56143558d81dae7628a232ca7582b947e65392b1  mingw-w64-v10.0.0.tar.bz2\n")
-file(WRITE "hashes/newlib-4.1.0.tar.gz.sha1"
-  "3f2536b591598e8e5c36f20f4d969266f81ab1ed  newlib-4.1.0.tar.gz\n")
-file(WRITE "hashes/newlib-4.3.0.20230120.tar.gz.sha1"
-  "1fe9b5ba44a4dd0f1fc49831964053458a834ef6  newlib-4.3.0.20230120.tar.gz\n")
-file(WRITE "hashes/binutils-2.40.tar.gz.sha1"
-  "51cf8aac159473418688c62ec52f3653d1b8e0a7  binutils-2.40.tar.gz\n")
-file(WRITE "hashes/binutils-2.42.tar.gz.sha1"
-  "0332737873c121c43ec3860a9c53647337c38085  binutils-2.42.tar.gz\n")
-file(WRITE "hashes/gcc-13.2.0.tar.xz.sha1"
-  "5f95b6d042fb37d45c6cbebfc91decfbc4fb493c  gcc-13.2.0.tar.xz\n")
-file(WRITE "hashes/musl-1.2.5.tar.gz.sha1"
-  "36210d3423172a40ddcf83c762207c5f760b60a6  musl-1.2.5.tar.gz\n")
+file(WRITE "hashes/mingw-w64-v13.0.0.tar.bz2.sha256"
+  "5afe822af5c4edbf67daaf45eec61d538f49eef6b19524de64897c6b95828caf  mingw-w64-v13.0.0.tar.bz2\n")
+file(WRITE "hashes/newlib-4.5.0.20241231.tar.gz.sha256"
+  "33f12605e0054965996c25c1382b3e463b0af91799001f5bb8c0630f2ec8c852  newlib-4.5.0.20241231.tar.gz\n")
 
 # add newlib and mingw patches, then extract sources
 # mingw patch is based on https://github.com/jprjr/mingw-cross-make
@@ -165,10 +140,12 @@ add_custom_command(
   COMMAND patch -p 1 -i ${CGET_RECIPE_DIR}/mingw.diff
   # NOTE: the newlib patch has only been tested with ARM targets right now
   COMMAND patch -p 1 -i ${CGET_RECIPE_DIR}/newlib.diff
-  COMMAND mv patches/gcc-12.2.0 patches/gcc-13.2.0
-  COMMAND cp ${CGET_RECIPE_DIR}/gcc-5.4.0-locale.patch patches/gcc-13.2.0/
+  COMMAND mkdir patches/musl-1.2.5
+  COMMAND cp ${CGET_RECIPE_DIR}/musl-1.2.5-security.patch patches/musl-1.2.5/
+  COMMAND mkdir patches/gcc-15.1.0
+  COMMAND cp ${CGET_RECIPE_DIR}/gcc-5.4.0-locale.patch patches/gcc-15.1.0/
   # prevent redownloading of files due to too new timestamps
-  COMMAND touch -t 200001011200 hashes/*.sha1
+  COMMAND touch -t 200001011200 hashes/*.sha256
   COMMAND make -w -j${CPUS} TARGET=${ARCH} HOST=${HOST}
                OUTPUT=${CMAKE_CURRENT_BINARY_DIR}/${ARCH} extract_all
   # libgomp forces -Werror, but has warnings
@@ -197,7 +174,7 @@ foreach (ARCH IN LISTS TARGETS)
   set(makecpus ${CPUS})
   if (ARCH MATCHES "mingw32")
     # some mingw toolchain versions have a race condition in parallel builds, set to 1 if you encounter this bug
-    set(makecpus 1)
+    #set(makecpus 1)
   endif()
   if (NOT ARCH MATCHES "darwin")
   add_custom_command(
