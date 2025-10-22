@@ -1,1 +1,1 @@
-jthat/musl-cross-make@d1993a61c4ded1d06abdc6bd5d8681e4e7c8974a -X build.cmake -H sha256:12256deee0f9ad50eb7ffa81af22c252f4953c1423e9011fe3acdb025a0ce43d
+jthat/musl-cross-make@v1.3.0 -X build.cmake -H sha256:479a3cc22068ceeb09d5168c084eb6449d5e1e33579fcccf55435249170a28fd
