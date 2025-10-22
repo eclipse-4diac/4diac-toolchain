@@ -29,9 +29,8 @@
 #   path. The drawback is that the binary must be started with its own directory
 #   as the working directory, it cannot sensibly be put into $PATH.
 #
-# This script implements the third solution, despite its noticeable drawback.
-# Unfortunately, the other two variants have proven to be unreliable in
-# various corner cases.
+# This script used to implement the third solution, but recent improvements in the
+# dynamic linker now make the first solution work well.
 #
 
 [ "$1" = "native-toolchain" ] && exit 0
@@ -87,7 +86,6 @@ done
 interp="$(strings "$bin" | grep '^/.*/ld' | head -n 1)"
 interp="${interp##*/}"
 find "$toolchain" -name "$interp" -exec cp {} "$bindir/" ';'
-#patchelf --set-interpreter "./bundle/$interp" "$bin"
 
 
 cat << EOF > "$bindir/../forte"
