@@ -1,1 +1,1 @@
-. -X build.cmake
+.
