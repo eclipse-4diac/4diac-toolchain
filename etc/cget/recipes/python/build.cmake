@@ -15,13 +15,23 @@ cmake_minimum_required(VERSION 3.10)
 project(python C)
 
 include(toolchain-utils)
-set(pymainver "3.9")
-set(pyver "3.9.10")
+set(pymainver "3.12")
+set(pyver "3.12.12")
+set(PYTHON_VERSION ${pyver} CACHE STRING "" FORCE)
 
 # use our cached download system
 add_source(../Python-${pyver} Python-${pyver}.tgz
   https://www.python.org/ftp/python/${pyver}/Python-${pyver}.tgz
-  1aa9c0702edbae8f6a2c95f70a49da8420aaa76b7889d3419c186bfc8c0e571e)
+  487c908ddf4097a1b9ba859f25fe46d22ccaabfb335880faac305ac62bffb79b)
+
+if (CMAKE_CROSSCOMPILING)
+  patch(cmake/python/CMakeLists.txt "\nif\\(UNIX\\)" "\nif(FALSE)")
+  patch(cmake/libpython/CMakeLists.txt "add_executable\\(_freeze_importlib" "#[[")
+  patch(cmake/libpython/CMakeLists.txt "add_executable\\(_bootstrap_python" "#[[")
+  patch(cmake/libpython/CMakeLists.txt "_freeze_importlib" "\${TOOLCHAINS_ROOT}/lib/python${pymainver}/buildtools/_freeze_importlib")
+  patch(cmake/libpython/CMakeLists.txt "_bootstrap_python" "\${TOOLCHAINS_ROOT}/lib/python${pymainver}/buildtools/_bootstrap_python")
+  patch(cmake/libpython/CMakeLists.txt "Py_NO_ENABLE_SHARED\n\\)" "Py_NO_ENABLE_SHARED\n)\n#]]")
+endif ()
 
 if (WIN32)
   add_compile_options(-D_WIN32_WINNT=0x0601 -DNTDDI_VERSION=0x06010000)
@@ -79,7 +89,6 @@ if (APPLE)
 endif()
 
 # feature minimizing
-set(BUILD_WININST OFF CACHE BOOL "" FORCE)
 set(INSTALL_DEVELOPMENT OFF CACHE BOOL "" FORCE)
 set(INSTALL_MANUAL OFF CACHE BOOL "" FORCE)
 set(INSTALL_TEST OFF CACHE BOOL "" FORCE)
@@ -90,21 +99,17 @@ set(WITH_DOC_STRINGS OFF CACHE BOOL "" FORCE)
 # result in loading glibc-based libs, and that would not work anyway
 set(ENABLE_CTYPES OFF CACHE BOOL "" FORCE)
 set(ENABLE_DECIMAL OFF CACHE BOOL "" FORCE)
-set(BUILTIN_DECIMAL ON CACHE BOOL "" FORCE)
-set(BUILTIN_OVERLAPPED OFF CACHE BOOL "" FORCE)
+set(ENABLE_OVERLAPPED OFF CACHE BOOL "" FORCE)
 set(ENABLE_FINDVS OFF CACHE BOOL "" FORCE)
+set(ENABLE_TESTINTERNALCAPI OFF CACHE BOOL "" FORCE)
 # disable loading of _ctypes, but keep the ctypes module for compatibility
 # (e.g. setuptools imports it without using it)
 file(WRITE ../Python-${pyver}/Lib/ctypes/__init__.py "\n")
 
-# LibreSSL workaround not needed anymore with newer LibreSSL
-patch(../Python-${pyver}/Modules/_hashopenssl.c "/\\* OpenSSL < 1.1.0 \\*/" "#endif
-#if 0")
-add_compile_options(-DHAVE_X509_VERIFY_PARAM_SET1_HOST)
-
 # external dependencies
 set(OPENSSL_INCLUDE_DIR "${CMAKE_INSTALL_PREFIX}/include" CACHE STRING "" FORCE)
 set(OPENSSL_LIBRARIES "${CMAKE_INSTALL_PREFIX}/lib" CACHE STRING "" FORCE)
+add_compile_options(-DHAVE_X509_VERIFY_PARAM_SET1_HOST)
 set(ZLIB_LIBRARY "${CMAKE_INSTALL_PREFIX}/lib/libz.a" CACHE STRING "" FORCE)
 set(ZLIB_INCLUDE_DIR "${CMAKE_INSTALL_PREFIX}/include" CACHE STRING "" FORCE)
 
@@ -141,6 +146,12 @@ set(LOG1P_DROPS_ZERO_SIGN OFF CACHE BOOL "")
 set(HAVE_BROKEN_SEM_GETVALUE ON CACHE BOOL "")
 set(HAVE_IPA_PURE_CONST_BUG OFF CACHE BOOL "")
 
+# libressl compatibility
+patch(../Python-${pyver}/Modules/_hashopenssl.c "#define PY_OPENSSL_HAS_SCRYPT 1" "")
+patch(../Python-${pyver}/Modules/_hashopenssl.c "if[^\n]*EVP_MD_FLAG_XOF[^\n]*{" "if(0){")
+patch(../Python-${pyver}/Modules/_hashopenssl.c "EVPXOFtype" "EVPtype")
+patch(../Python-${pyver}/Modules/_ssl.c "OPENSSL_VERSION_NUMBER < 0x30300000L" "0")
+
 if (WIN32)
   add_compile_options(-DSIZEOF_WCHAR_T=2 -DHAVE_UNISTD_H -w -fno-lto)
   # Lowercase the Lib folder so that /etc/package.sh can find all python modules
@@ -155,3 +166,10 @@ if (WIN32)
   cmake_policy(SET CMP0079 NEW)
   target_link_libraries(python -municode)
 endif()
+
+if (NOT CMAKE_CROSSCOMPILING)
+  target_compile_options(_freeze_importlib PRIVATE -fno-lto)
+  target_compile_options(_bootstrap_python PRIVATE -fno-lto)
+  install(TARGETS _freeze_importlib DESTINATION lib/python${pymainver}/buildtools)
+  install(TARGETS _bootstrap_python DESTINATION lib/python${pymainver}/buildtools)
+endif ()
