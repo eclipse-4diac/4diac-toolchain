@@ -224,6 +224,7 @@ parse_cmdline() {
 			-T|--target) ensure build; build_target="$2"; shift 2;;
 
 			-D*) forbid_separator "$2" Defines; defs="$defs$1"; shift;;
+			-S*) forbid_separator "$2" Defines; defs="$defs$1"; shift;;
 			--define) forbid_separator "$2" Defines; defs="$defs-D$2"; shift 2;;
 
 			-*) die "Unsupported option: $1";;
@@ -521,13 +522,15 @@ _build_internal() {
 			  [ -z "$def" ] || set -- "$@" "$def"
 			  defs="${defs#"$def"}"
 		done
-		if ! cmake "$pkg_url" -DCMAKE_INSTALL_PREFIX="$prefix" "$@" \
+		cd "$pkg_url"
+		if ! cmake -S. -B"$pkgbuilddir/build" -DCMAKE_INSTALL_PREFIX="$prefix" "$@" \
 			-DCMAKE_TOOLCHAIN_FILE="$prefix/cget/cget.cmake" \
 			-G "${generator:-Unix Makefiles}" \
 			-DCGET_PREFIX:STRING="$prefix"; then
 			rm CMakeCache.txt
 			return 1
 		fi
+		cd "$pkgbuilddir/build"
 	fi
 
 	cmake_build ${build_target:+--target "$build_target"}
@@ -559,7 +562,7 @@ string(REGEX REPLACE "/cget\\\$" "" CGET_PREFIX "\${CGET_PREFIX}")
 set(CMAKE_SYSTEM_PREFIX_PATH "\${CGET_PREFIX}")
 $toolchain
 list(APPEND CMAKE_FIND_ROOT_PATH "\${CGET_PREFIX}")
-set(CMAKE_MODULE_PATH "\${TOOLCHAINS_ROOT}/etc/cget/cmake")
+list(PREPEND CMAKE_MODULE_PATH "\${TOOLCHAINS_ROOT}/etc/cget/cmake")
 set(CMAKE_INSTALL_PREFIX "\${CGET_PREFIX}" CACHE STRING "")
 set(CMAKE_EXE_LINKER_FLAGS_INIT "-L\${CGET_PREFIX}/lib \${CMAKE_EXE_LINKER_FLAGS_INIT}")
 set(CMAKE_SHARED_LINKER_FLAGS_INIT "-L\${CGET_PREFIX}/lib \${CMAKE_SHARED_LINKER_FLAGS_INIT}")
