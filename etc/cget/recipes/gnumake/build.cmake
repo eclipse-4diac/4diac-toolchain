@@ -54,6 +54,7 @@ target_compile_definitions(make PRIVATE INCLUDEDIR="${CGET_PREFIX}/include")
 target_compile_definitions(make PRIVATE LIBDIR="${CGET_PREFIX}/lib")
 target_compile_definitions(make PRIVATE LOCALEDIR="")
 target_compile_definitions(make PRIVATE HAVE_CONFIG_H=1)
+target_compile_options(make PRIVATE -std=c99)
 
 if (APPLE)
   target_compile_definitions(make PRIVATE -DST_MTIM_NSEC=st_mtimespec.tv_nsec)
