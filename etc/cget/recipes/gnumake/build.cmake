@@ -58,13 +58,15 @@ target_compile_options(make PRIVATE -std=c99)
 
 if (APPLE)
   target_compile_definitions(make PRIVATE -DST_MTIM_NSEC=st_mtimespec.tv_nsec)
+else()
+  target_compile_definitions(make PRIVATE -DST_MTIM_NSEC=st_mtim.tv_nsec)
 endif()
 
 if (WIN32)
   target_include_directories(make PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/w32/include)
   target_compile_definitions(make PRIVATE WINDOWS32)
   target_compile_options(make PRIVATE -mthreads)
-  target_compile_definitions(make PRIVATE -DST_MTIM_NSEC=st_mtim.tv_nsec)
+  target_compile_definitions(make PRIVATE _cdecl=)
 
   file(RENAME lib/fnmatch.in.h lib/fnmatch.h)
   file(RENAME lib/alloca.in.h lib/alloca.h)
@@ -74,7 +76,6 @@ if (WIN32)
 
 else()
   target_compile_definitions(make PRIVATE __alloca=alloca)
-  target_compile_definitions(make PRIVATE -DST_MTIM_NSEC=st_mtim.tv_nsec)
   # Regex for simplification: <Ctrl-J>*/\*[^*]*\*/
   file(WRITE config.h "
 #define FILE_TIMESTAMP_HI_RES 1
@@ -190,6 +191,8 @@ else()
 #ifndef _DARWIN_USE_64_BIT_INODE
 # define _DARWIN_USE_64_BIT_INODE 1
 #endif
+
+#include \"../src/mkcustom.h\"
 ")
 
 endif()
