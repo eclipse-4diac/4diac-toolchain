@@ -14,8 +14,10 @@
 cmake_minimum_required(VERSION 3.10)
 project(regex C)
 
+
 add_library(regex regex.c)
 target_compile_definitions(regex PRIVATE STDC_HEADERS)
+target_compile_options(regex PRIVATE -std=c90)
 
 install(TARGETS regex DESTINATION lib)
 install(FILES regex.h DESTINATION include)

@@ -11,7 +11,7 @@
 #    Jörg Walter - initial implementation
 # *******************************************************************************/
 
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.13)
 project(python C)
 
 include(toolchain-utils)
@@ -34,39 +34,38 @@ if (CMAKE_CROSSCOMPILING)
 endif ()
 
 if (WIN32)
-  add_compile_options(-D_WIN32_WINNT=0x0601 -DNTDDI_VERSION=0x06010000)
-  add_compile_options(-D_PYTHONFRAMEWORK="" -DPLATLIBDIR="lib")
-  # not supported by mingw
-  file(REMOVE ../Python-${pyver}/PC/_findvs.cpp)
+  add_compile_options(-D_WIN32_WINNT=0x0602 -DNTDDI_VERSION=0x06020000 -DWINVER=0x0602)
+  add_compile_options(-D_PYTHONFRAMEWORK="" -DMS_WINDOWS_DESKTOP)
+  add_compile_options(-Wno-incompatible-pointer-types -municode)
+  add_compile_options(-DHAVE_GETHOSTBYNAME -DHAVE_GETHOSTBYADDR -DHAVE_DECL_TZNAME)
+  # launcher mingw fixes
+  patch(cmake/PC/launcher/CMakeLists.txt "/MANIFEST:NO" "-municode")
+  patch(cmake/PC/launcher/CMakeLists.txt "/U_WINDOWS" "")
   # not supported by libressl
   patch(cmake/extensions/CMakeLists.txt "list.APPEND _ssl_SOURCES .*/openssl/applink.c." "")
   patch(cmake/extensions/CMakeLists.txt "msvcrt REQUIRES MSVC" "msvcrt REQUIRES WIN32" "")
-  # case-sensitivty
+  # path name differences
+  patch(../Python-${pyver}/PC/pylauncher.rc "icons\\\\" "icons/")
+  patch(../Python-${pyver}/Modules/socketmodule.c "Rpc.h" "rpc.h")
   patch(cmake/extensions/CMakeLists.txt "Crypt32" "crypt32")
-  patch(../Python-${pyver}/Modules/socketmodule.h "MSTcpIP.h" "mstcpip.h")
-  patch(../Python-${pyver}/Modules/socketmodule.c "VersionHelpers.h" "versionhelpers.h")
-  patch(../Python-${pyver}/Modules/socketmodule.c "IPPROTO enum,[^#]*#ifdef MS_WINDOWS" "*/
-    #if 0")
-  patch(../Python-${pyver}/PC/getpathp.c "Shlwapi.h" "shlwapi.h")
-  patch(../Python-${pyver}/PC/_testconsole.c "\\\\modules\\\\_io\\\\" "/Modules/_io/")
-  patch(../Python-${pyver}/PC/_testconsole.c "clinic\\\\" "clinic/")
+  patch(cmake/extensions/CMakeLists.txt "Rpcrt4" "rpcrt4")
+  patch(cmake/libpython/CMakeLists.txt "_wide_char_modifier \"L\"" "_wide_char_modifier \"\"")
   # symbol clash
   patch(../Python-${pyver}/Modules/expat/xmlparse.c "([^_])PREFIX" "\\1xPREFIX")
-  # python is confused which threading api to use
+  # on mingw, python is confused which threading api to use
   patch(../Python-${pyver}/Python/thread.c "_POSIX_THREADS" "NOT_POSIX_THREADS")
-  # unimplemented in wine, but required during build -- force the fallback implementation
-  patch(../Python-${pyver}/PC/getpathp.c "api-ms-win-core-path-l1-1-0.dll" "nonexisting.dll")
-  # fix posix module not being aware of mingw (yes, it is supposed to be available on Win32)
-  # TODO: check if there is anything in here that below minimal fix misses
-  #execute_process(COMMAND patch -p0 -i ${CMAKE_CURRENT_SOURCE_DIR}/cmake/patches-win32/03-mingw32.patch
-  #  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../Python-${pyver})
-  patch(../Python-${pyver}/Modules/posixmodule.c "#include \"Python.h\"" "
-#define _MSC_VER 1
-#include \"Python.h\"
-#include \"osdefs.h\"
-#")
-  # Python executes itself during the build...
-  set(CMAKE_CROSSCOMPILING_EMULATOR env WINEPREFIX=${CMAKE_CURRENT_BINARY_DIR}/.wine /usr/bin/wine)
+  patch(../Python-${pyver}/Include/internal/pycore_condvar.h "_POSIX_THREADS" "NOT_POSIX_THREADS")
+  patch(../Python-${pyver}/Include/internal/pycore_pythread.h "_POSIX_THREADS" "NOT_POSIX_THREADS")
+  # small module problems
+  patch(../Python-${pyver}/Modules/socketmodule.c "IPPROTO enum,[^#]*#[^*]*" "")
+  patch(../Python-${pyver}/Modules/posixmodule.c "PyLong_FromPid.getpid" "PyLong_FromUnsignedLong(GetCurrentProcessId")
+  patch(../Python-${pyver}/Modules/posixmodule.c "_MSC_VER" "__MINGW32__")
+  patch(../Python-${pyver}/Python/sysmodule.c "SET_SYS_FROM_STRING..winver., PyWin_DLLVersionString.;" "SET_SYS_FROM_STRING(\"winver\", PyWin_DLLVersionString);\n#else\nSET_SYS_FROM_STRING(\"winver\",\"${pyver}\");\n")
+  # make python search path identical to unix version
+  patch(__cget_sh_CMakeLists.txt "LIBDIR \"Lib\"" "LIBDIR \"lib/python${pymainver}\"")
+  patch(../Python-${pyver}/Modules/getpath.py "'Lib'" "f'{platlibdir}'")
+  patch(../Python-${pyver}/Lib/site.py "os.sep == '/'" "True")
+  file(REMOVE patches/3.12/0002-getpath-Update-build-directory-assumptions-based-on-.patch)
 endif()
 
 set(DOWNLOAD_SOURCES OFF CACHE BOOL "" FORCE)
@@ -102,6 +101,9 @@ set(ENABLE_DECIMAL OFF CACHE BOOL "" FORCE)
 set(ENABLE_OVERLAPPED OFF CACHE BOOL "" FORCE)
 set(ENABLE_FINDVS OFF CACHE BOOL "" FORCE)
 set(ENABLE_TESTINTERNALCAPI OFF CACHE BOOL "" FORCE)
+set(ENABLE_TESTCONSOLE OFF CACHE BOOL "" FORCE)
+set(ENABLE_WMI OFF CACHE BOOL "" FORCE)
+
 # disable loading of _ctypes, but keep the ctypes module for compatibility
 # (e.g. setuptools imports it without using it)
 file(WRITE ../Python-${pyver}/Lib/ctypes/__init__.py "\n")
@@ -154,8 +156,6 @@ patch(../Python-${pyver}/Modules/_ssl.c "OPENSSL_VERSION_NUMBER < 0x30300000L" "
 
 if (WIN32)
   add_compile_options(-DSIZEOF_WCHAR_T=2 -DHAVE_UNISTD_H -w -fno-lto)
-  # Lowercase the Lib folder so that /etc/package.sh can find all python modules
-  patch(__cget_sh_CMakeLists.txt "LIBDIR \"Lib\"" "LIBDIR \"lib/python${pymainver}\"")
 else()
   add_compile_options(-DSIZEOF_WCHAR_T=4 -DHAVE_UNISTD_H -w)
 endif()
@@ -163,7 +163,6 @@ endif()
 include(${CGET_CMAKE_ORIGINAL_SOURCE_FILE})
 
 if (WIN32)
-  cmake_policy(SET CMP0079 NEW)
   target_link_libraries(python -municode)
 endif()
 

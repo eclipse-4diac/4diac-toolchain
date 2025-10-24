@@ -29,5 +29,5 @@ cmake_policy(SET CMP0079 NEW)
 target_link_libraries(cmzlib PUBLIC pthread)
 
 if (WIN32)
-	target_link_libraries(CMakeLib PUBLIC ole32 oleaut32)
+	target_link_libraries(CMakeLib PUBLIC ole32 oleaut32 uuid)
 endif()

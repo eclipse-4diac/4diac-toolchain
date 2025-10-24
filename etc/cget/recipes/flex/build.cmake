@@ -14,8 +14,12 @@
 cmake_minimum_required(VERSION 3.10)
 project(flex C)
 
-if(MINGW)
-	file(MAKE_DIRECTORY sys)
+include(toolchain-utils)
+patch(lib/malloc.c "void .malloc ..;" "#include <stdlib.h>")
+patch(src/config.h.in "#undef (malloc|realloc)" "")
+
+if (MINGW)
+  file(MAKE_DIRECTORY sys)
   file(WRITE sys/wait.h [=[
 #define wait(x) -1
 #define WIFEXITED(x) 1
@@ -35,7 +39,6 @@ endif()
 
 # needed when cross-compiling
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
-
 set(AUTOTOOLS_CONFIGURE_OPTIONS
   "--disable-libfl"
   "--disable-bootstrap"
