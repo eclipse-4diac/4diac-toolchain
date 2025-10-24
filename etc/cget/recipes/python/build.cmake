@@ -83,8 +83,6 @@ if (APPLE)
 	set(WITH_STATIC_DEPENDENCIES OFF CACHE BOOL "" FORCE)
 
 	link_libraries("-framework CoreFoundation")
-	patch(cmake/python/CMakeLists.txt "if.UNIX AND PY_VERSION VERSION_GREATER \"2.7.4\"." "if(FALSE)")
-	patch(cmake/libpython/CMakeLists.txt "\nif.IS_PY3." "\nif(FALSE)")
 endif()
 
 # feature minimizing
@@ -92,6 +90,7 @@ set(INSTALL_DEVELOPMENT OFF CACHE BOOL "" FORCE)
 set(INSTALL_MANUAL OFF CACHE BOOL "" FORCE)
 set(INSTALL_TEST OFF CACHE BOOL "" FORCE)
 set(USE_SYSTEM_LIBRARIES ON CACHE BOOL "" FORCE)
+set(USE_SYSTEM_TCL OFF CACHE BOOL "" FORCE)
 set(WITH_DOC_STRINGS OFF CACHE BOOL "" FORCE)
 
 # disable extensions with compile errors; _ctypes is quite a loss, but it would
@@ -103,6 +102,7 @@ set(ENABLE_FINDVS OFF CACHE BOOL "" FORCE)
 set(ENABLE_TESTINTERNALCAPI OFF CACHE BOOL "" FORCE)
 set(ENABLE_TESTCONSOLE OFF CACHE BOOL "" FORCE)
 set(ENABLE_WMI OFF CACHE BOOL "" FORCE)
+set(ENABLE_TKINTER OFF CACHE BOOL "" FORCE)
 
 # disable loading of _ctypes, but keep the ctypes module for compatibility
 # (e.g. setuptools imports it without using it)

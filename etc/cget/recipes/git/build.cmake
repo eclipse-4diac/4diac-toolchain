@@ -16,7 +16,7 @@ project(git C)
 
 set(MAKEFILE_OPTIONS
 	NO_PERL=YesPlease NO_EXPAT=YesPlease NO_GETTEXT=YesPlease NO_TCLTK=YesPlease NO_PYTHON=YesPlease NO_REGEX=NeedsStartEnd NO_SVN_TESTS=YesPlease NO_GITWEB=YesPlease
-	V=1 "SANE_TOOL_PATH=${CGET_PREFIX}/bin" "prefix=${CMAKE_CURRENT_BINARY_DIR}/install" RUNTIME_PREFIX=YesPlease INSTALL_STRIP=-s "CC=${CMAKE_C_COMPILER}" "LDFLAGS=${CMAKE_EXE_LINKER_FLAGS}")
+	V=1 "SANE_TOOL_PATH=${CGET_PREFIX}/bin" "prefix=${CMAKE_CURRENT_BINARY_DIR}/install" RUNTIME_PREFIX=YesPlease INSTALL_STRIP=-s "CC=${CMAKE_C_COMPILER}" "LDFLAGS=${CMAKE_EXE_LINKER_FLAGS}" "AR=${CMAKE_AR}")
 
 # git doesn't detect cross-compilation properly
 if (WIN32)
@@ -24,7 +24,7 @@ if (WIN32)
 	file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/compat/win32/pthread.c "")
 	file(REMOVE ${CMAKE_CURRENT_SOURCE_DIR}/compat/win32/pthread.h)
 elseif (APPLE)
-	list(APPEND MAKEFILE_OPTIONS uname_S=Darwin)
+	list(APPEND MAKEFILE_OPTIONS uname_S=Darwin uname_R=20.2 "LDFLAGS=${CMAKE_EXE_LINKER_FLAGS} -framework SystemConfiguration" INSTALL_STRIP=)
 else ()
 	list(APPEND MAKEFILE_OPTIONS uname_S=Linux)
 endif ()
