@@ -16,7 +16,8 @@ project(m4 C)
 
 include(toolchain-utils)
 if (APPLE)
-  patch("${CMAKE_CURRENT_SOURCE_DIR}/lib/obstack.c" "_Noreturn" "__attribute_noreturn__")
+  patch(lib/obstack.c "_Noreturn" "__attribute_noreturn__")
+  patch(lib/stdio.in.h "@GNULIB_(FPUTS|PUTS|FPUTC|PUTC|FWRITE|FPRINTF|VFPRINTF|PRINTF)@" "0")
 endif()
 
 set(AUTOTOOLS_CONFIGURE_OPTIONS
