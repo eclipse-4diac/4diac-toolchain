@@ -14,6 +14,7 @@
 #
 # build (add) a cross-compiler toolchain to the current toolchain directory
 #
+set -e
 cd "$(dirname "$0")/.."
 
 # detect cross-building

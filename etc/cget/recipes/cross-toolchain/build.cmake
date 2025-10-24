@@ -106,12 +106,12 @@ file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/config.mak
   "GCC_CONFIG += --enable-languages=c,lto,c++ --disable-multilib $(MCPU)\n"
   "GCC_CONFIG += --enable-libatomic --enable-threads=posix --enable-graphite --enable-libstdcxx-filesystem-ts=yes --disable-libstdcxx-pch --disable-lto --disable-win32-registry --disable-symvers --disable-plugin --disable-werror --disable-rpath --with-gnu-as --with-gnu-ld --disable-sjlj-exceptions --with-dwarf2 --enable-large-address-aware\n"
   "DL_CMD = curl -Lk -f --progress-bar -o\n"
-  "PATH:=$ENV{PATH}:${CMAKE_CURRENT_SOURCE_DIR}:${TOOLCHAINS_ROOT}/\$(TARGET)/bin\n"
+  "PATH:=$ENV{PATH}:${CMAKE_CURRENT_SOURCE_DIR}:${TOOLCHAINS_ROOT}/\$(TARGET)/bin:${CMAKE_CURRENT_BINARY_DIR}/\$(TARGET)/bin\n"
 )
 
 include(ProcessorCount)
 ProcessorCount(CPUS)
-# allow limiting the CPU count; notably, cross-building for windows has some unknown race condition
+# allow limiting the CPU count for debugging
 if(NOT "$ENV{CROSS_TOOLCHAIN_CPUS}" STREQUAL "")
   set(CPUS "$ENV{CROSS_TOOLCHAIN_CPUS}")
 endif()
@@ -171,17 +171,12 @@ foreach (ARCH IN LISTS TARGETS)
     message(FATAL_ERROR "\n\nMissing ${ARCH} toolchain for cross-compilation.")
   endif()
 
-  set(makecpus ${CPUS})
-  if (ARCH MATCHES "mingw32")
-    # some mingw toolchain versions have a race condition in parallel builds, set to 1 if you encounter this bug
-    #set(makecpus 1)
-  endif()
   if (NOT ARCH MATCHES "darwin")
   add_custom_command(
     OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/.${ARCH}-installed
     DEPENDS patched-sources
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    COMMAND make -w -j${makecpus} TARGET=${ARCH} HOST=${HOST}
+    COMMAND make -w -j${CPUS} TARGET=${ARCH} HOST=${HOST}
             OUTPUT=${CMAKE_CURRENT_BINARY_DIR}/${ARCH} MCPU=${MCPU} install
     COMMAND touch .${ARCH}-installed
   )
