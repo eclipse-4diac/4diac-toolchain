@@ -199,6 +199,7 @@ parse_cmdline() {
 			--cxxflags) ensure init; init_cxxflags="$2"; shift 2;;
 			--cflags) ensure init; init_cflags="$2"; shift 2;;
 			--ldflags) ensure init; init_ldflags="$2"; shift 2;;
+			--preset) preset="$2"; shift 2;;
 			--ccache) ensure init; ccache="1"; shift;;
 
 			-f|--file) ensure install; packages="$packages $(while read pkg _; do echo "$pkg"; done < "$2")"; shift 2;;
@@ -523,7 +524,7 @@ _build_internal() {
 			  defs="${defs#"$def"}"
 		done
 		cd "$pkg_url"
-		if ! cmake -S. -B"$pkgbuilddir/build" -DCMAKE_INSTALL_PREFIX="$prefix" "$@" \
+		if ! cmake -S. -B"$pkgbuilddir/build" -DCMAKE_INSTALL_PREFIX="$prefix" ${preset:+--preset} ${preset} "$@" \
 			-DCMAKE_TOOLCHAIN_FILE="$prefix/cget/cget.cmake" \
 			-G "${generator:-Unix Makefiles}" \
 			-DCGET_PREFIX:STRING="$prefix"; then
