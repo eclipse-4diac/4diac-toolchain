@@ -34,6 +34,7 @@ set(pipcommand ${pycmd} -m pip install --isolated --no-deps --force-reinstall)
 
 add_custom_target(six ALL DEPENDS pip COMMAND ${pipcommand} six==1.15.0)
 add_custom_target(setuptools ALL DEPENDS pip COMMAND ${pipcommand} setuptools==80.9.0)
+add_custom_target(compdb ALL DEPENDS pip COMMAND ${pipcommand} compdb==0.2.0)
 
 install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib DESTINATION .)
 install(PROGRAMS ${CGET_RECIPE_DIR}/pip DESTINATION bin)
