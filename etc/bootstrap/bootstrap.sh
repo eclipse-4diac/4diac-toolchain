@@ -92,4 +92,4 @@ fi
 cp "${toolchain}/cross-env.sh" "${toolchain}"/install-crosscompiler.* "${toolchain}"/*.md .
 
 # install remaining build tools
-cget install busybox gnumake cmake ninja ccache flex byacc git putty python lzip 7zip remake meson $builddir -G Ninja
+cget install busybox gnumake cmake ninja ccache flex byacc git putty python lzip 7zip remake meson jq $builddir -G Ninja
