@@ -37,5 +37,5 @@ add_custom_target(setuptools ALL DEPENDS pip COMMAND ${pipcommand} setuptools==8
 add_custom_target(compdb ALL DEPENDS pip COMMAND ${pipcommand} compdb==0.2.0)
 
 install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib DESTINATION .)
-install(PROGRAMS ${CGET_RECIPE_DIR}/pip DESTINATION bin)
-
+install(PROGRAMS ${CGET_RECIPE_DIR}/wrapper DESTINATION bin RENAME pip)
+install(PROGRAMS ${CGET_RECIPE_DIR}/wrapper DESTINATION bin RENAME compdb)
