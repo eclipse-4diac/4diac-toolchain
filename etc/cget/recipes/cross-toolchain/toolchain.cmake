@@ -88,8 +88,8 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Windows")
   string(APPEND TOOLCHAIN_COMMON_LINKER_FLAGS " -static --static")
 
 elseif (TOOLCHAIN_IS_CLANG)
-  string(APPEND TOOLCHAIN_COMMON_C_FLAGS " --sysroot=${TOOLCHAIN_ROOT}/lib/clang/18/lib/${TOOLCHAIN_ARCH}")
-  string(APPEND TOOLCHAIN_COMMON_LINKER_FLAGS " --sysroot=${TOOLCHAIN_ROOT}/lib/clang/18/lib/${TOOLCHAIN_ARCH}")
+  string(APPEND TOOLCHAIN_COMMON_C_FLAGS " --sysroot=${TOOLCHAIN_ROOT}/lib/clang/21/lib/${TOOLCHAIN_ARCH}")
+  string(APPEND TOOLCHAIN_COMMON_LINKER_FLAGS " --sysroot=${TOOLCHAIN_ROOT}/lib/clang/21/lib/${TOOLCHAIN_ARCH}")
   string(APPEND TOOLCHAIN_COMMON_LINKER_FLAGS " -static --static")
 
 else()
