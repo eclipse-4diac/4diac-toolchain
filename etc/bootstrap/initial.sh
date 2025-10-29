@@ -157,7 +157,7 @@ build_make() {
 
 
 build_cmake() {
-	! ( PATH="$PWD/bin:$PWD/cmake/Bootstrap.cmk"; type cmake 2>/dev/null; ) || return 0
+	! ( PATH="$PWD/bin:$PWD/cmake/bin"; type cmake 2>/dev/null; ) || return 0
 	msg "Building CMake (minimal)..."
 
 	# fetch the full version into the download cache, since bootstrap cmake can't download files
@@ -167,7 +167,7 @@ build_cmake() {
 	fetch_file "$fn" "$sha256" "$url"
 
 	# we use an older cmake for bootstrap as it is known to work in this limited environment
-	fetch_file cmake-3.13.2.tar.gz c925e7d2c5ba511a69f43543ed7b4182a7d446c274c7480d0e42cd933076ae25 https://github.com/Kitware/CMake/releases/download/v3.13.2/cmake-3.13.2.tar.gz
+	fetch_file cmake-3.16.9.tar.gz 1708361827a5a0de37d55f5c9698004c035abb1de6120a376d5d59a81630191f https://github.com/Kitware/CMake/releases/download/v3.16.9/cmake-3.16.9.tar.gz
 
 	tar xzf "$download"
 	rm -rf cmake
@@ -176,8 +176,10 @@ build_cmake() {
 	ccache="--enable-ccache"
 	type ccache 2>/dev/null || ccache=""
 	export CCACHE_COMPILERCHECK="string:$("${CXX}" -v 2>&1)"
-	sed -i -e 's/MINGW/Windows_NT/; s/pwd -W/pwd/' bootstrap
-    sh ./bootstrap --parallel="$CMAKE_BUILD_PARALLEL_LEVEL" LDFLAGS="-static" $ccache CC="$CC" CXX="$CXX" CFLAGS="-static" CXXFLAGS="-static"
+	echo 'set(CMAKE_USE_OPENSSL OFF CACHE BOOL "" FORCE)' > init.cmake
+	echo 'set(BUILD_TESTING OFF CACHE BOOL "" FORCE)' >> init.cmake
+        sh ./bootstrap --parallel="$CMAKE_BUILD_PARALLEL_LEVEL" LDFLAGS="-static" $ccache CC="$CC" CXX="$CXX" CFLAGS="-static" CXXFLAGS="-static" --init=init.cmake
+	make
 	unset CCACHE_COMPILERCHECK
 	cd ..
 	# bootstrap cmake needs the source dir, so keep it
@@ -243,7 +245,7 @@ stage2() {
 
 	# Build and register the boostraped phase 1. CMake
 	build_cmake
-	export BOOTSTRAP_CMAKE="$bootstrap/cmake/Bootstrap.cmk/cmake"	
+	export BOOTSTRAP_CMAKE="$bootstrap/cmake/bin/cmake"	
 
 
 	sh etc/cget/cget.sh init --ccache --ldflags "-static" \
@@ -273,6 +275,9 @@ stage2() {
 	cp etc/bootstrap/curl.sh bin/curl
 	chmod 755 bin/curl
 
+	msg "building zstd..."
+	sh etc/cget/cget.sh install zstd $builddir -G "Unix Makefiles" 
+
 	msg "building native compiler stage 1..."
 	sh etc/cget/cget.sh install --no-depends cross-toolchain $builddir -G "Unix Makefiles" \
 	   -DCMAKE_C_COMPILER="$CC" -DCMAKE_CXX_COMPILER="$CXX" -DTARGETS="$arch"
@@ -287,7 +292,7 @@ stage2() {
 
 	# provide symlinks for installation of python-related packages
 	ln -sf ../../bin/python bin/
-	ln -sf ../../lib/python3.9 lib/
+	ln -sf ../../lib/python3.12 lib/
 
 	unset CC CXX AR LD CMAKE_BOOTSTRAP_EXEC
 	bin/cget init -t "$arch.cmake" --ccache -DCMAKE_BUILD_TYPE=Release
@@ -326,9 +331,6 @@ cd bootstrap
 stage1
 stage2
 cd ..
+mkdir -p .cache
 stage3
-if [ -L .cache ]; then
-	rm .cache
-	mv bootstrap/.cache .
-fi
 exec bin/rm -rf bootstrap
