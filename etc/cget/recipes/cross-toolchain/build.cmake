@@ -104,7 +104,7 @@ file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/config.mak
   "COMMON_CONFIG += --with-debug-prefix-map=$(CURDIR)= --disable-nls --disable-shared --enable-deterministic-archives\n"
   "COMMON_CONFIG += --disable-gprofng --disable-gcov\n"
   "GCC_CONFIG += --enable-languages=c,lto,c++ --disable-multilib $(MCPU)\n"
-  "GCC_CONFIG += --enable-libatomic --enable-threads=posix --enable-graphite --enable-libstdcxx-filesystem-ts=yes --disable-libstdcxx-pch --disable-lto --disable-win32-registry --disable-symvers --disable-plugin --disable-werror --disable-rpath --with-gnu-as --with-gnu-ld --disable-sjlj-exceptions --with-dwarf2 --enable-large-address-aware\n"
+  "GCC_CONFIG += --enable-libatomic --enable-threads=posix --enable-graphite --enable-libstdcxx-filesystem-ts=yes --enable-libstdcxx-backtrace=yes --with-zstd --disable-libstdcxx-pch --disable-lto --disable-win32-registry --disable-symvers --disable-plugin --disable-werror --disable-rpath --with-gnu-as --with-gnu-ld --disable-sjlj-exceptions --with-dwarf2 --enable-large-address-aware\n"
   "DL_CMD = curl -Lk -f --progress-bar -o\n"
   "PATH:=$ENV{PATH}:${CMAKE_CURRENT_SOURCE_DIR}:${TOOLCHAINS_ROOT}/\$(TARGET)/bin:${CMAKE_CURRENT_BINARY_DIR}/\$(TARGET)/bin\n"
 )
@@ -150,10 +150,12 @@ add_custom_command(
                OUTPUT=${CMAKE_CURRENT_BINARY_DIR}/${ARCH} extract_all
   # libgomp forces -Werror, but has warnings
   COMMAND sed -i -e 's/-Werror//' gcc-*/libgomp/configure
+  # the configure fragment in there messes with library support detection
+  COMMAND sed -i -e s/target-libbacktrace// gcc-*.orig/gcc/d/config-lang.in
+  COMMAND sed -i -e s/target-libbacktrace// gcc-*.orig/gcc/fortran/config-lang.in
+  COMMAND sed -i -e s/target-libbacktrace// gcc-*.orig/gcc/go/config-lang.in
   # gcc misdetects the libgloss subdirectory (riscv64 instead of riscv)
   COMMAND sed -i -e 's/libgloss_dir=arm/libgloss_dir=arm\;\;riscv*-*-*\)libgloss_dir=riscv/' gcc-*/configure
-  # musl+gcc-11 bug that will be fixed in gcc-12
-  #COMMAND sed -i -e 's/-std=gnu++17/-std=gnu++17 -nostdinc++/' gcc-11.3.0/libstdc++-v3/src/c++17/Makefile.in
   COMMAND touch .extracted
   )
 add_custom_target(patched-sources DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/.extracted)
