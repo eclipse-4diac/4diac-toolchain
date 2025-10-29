@@ -14,9 +14,11 @@
 cmake_minimum_required(VERSION 3.10)
 project(putty C)
 
+include(toolchain-utils)
+
 include(${CGET_CMAKE_ORIGINAL_SOURCE_FILE})
 
 set_target_properties(pscp PROPERTIES OUTPUT_NAME scp)
 set_target_properties(psftp PROPERTIES OUTPUT_NAME sftp)
-install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/plink${CMAKE_EXECUTABLE_SUFFIX} DESTINATION bin RENAME ssh${CMAKE_EXECUTABLE_SUFFIX})
+install(PROGRAMS ${CGET_RECIPE_DIR}/ssh DESTINATION bin)
 

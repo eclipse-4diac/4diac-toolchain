@@ -1,0 +1,17 @@
+#!/bin/sh
+set -e
+
+delimiter="$*"
+set -- "$@" "$delimiter"
+while [ "$1" != "$delimiter" ]; do
+    opt="$1"
+    shift
+
+    case "$opt" in
+        "-o") shift;;
+        *) set -- "$@" "$opt";;
+    esac
+done
+shift
+
+exec plink "$@"
