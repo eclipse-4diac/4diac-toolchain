@@ -17,6 +17,14 @@ project(clang-musl C)
 include(toolchain-utils)
 include(${CGET_RECIPE_DIR}/../clang-bootstrap/helpers.cmake)
 
+execute_process(
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMAND patch -p 1 -i ${CGET_RECIPE_DIR}/musl-1.2.5-security.patch
+  RESULT_VARIABLE RC)
+if (${RC} GREATER 0)
+	message(FATAL_ERROR "patch failed")
+endif()
+
 set(LLVM_COMPILER_ARGS
 	"CC=${HOST_TOOLCHAIN}/bin/clang"
 	"CXX=${HOST_TOOLCHAIN}/bin/clang++"
