@@ -33,6 +33,9 @@ if [ "$#" = 0 ]; then
 	fi
 fi
 
+force=
+[ "$1" != "-f" ] || { shift; force=1; }
+
 # build the provided target(s)
 for i in "$@"; do
 	case "$i" in
@@ -42,6 +45,6 @@ for i in "$@"; do
 		*-*-*) pkg="cross-toolchain";;
 		*) echo "Unknown target: $i" >&2; exit 1;;
 	esac
-	[ -f "$i".cmake ] && echo "Skipping $i, already installed." && continue
+	[ -n "$force" -o ! -f "$i".cmake ] || { echo "Skipping $i, already installed."; continue; }
 	"${nativedir}/bin/cget" -p . install -U "$pkg" -DTARGETS="$i" 2>&1 | tee "build-toolchain-$i.log" || exit 1
 done
