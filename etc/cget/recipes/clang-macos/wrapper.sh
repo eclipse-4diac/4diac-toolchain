@@ -80,7 +80,9 @@ exec "$bin/$tool" \
 	-mmacosx-version-min="$sdkver.0" \
 	-arch "$arch" \
 	-fuse-ld=lld \
-	-stdlib=libc++ -nostdinc++ \
+	-fuse-lipo=llvm-lipo \
+	-stdlib=libc++ \
+	-nostdinc++ \
 	-Wno-implicit-function-declaration \
 	--end-no-unused-arguments \
 	"$@"

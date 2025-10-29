@@ -30,18 +30,19 @@ string(REGEX REPLACE "-.*"        ""    CMAKE_SYSTEM_PROCESSOR "${TOOLCHAIN_ARCH
 string(REGEX REPLACE ".*-([^-]*)-[^-]*" "\\1" CMAKE_SYSTEM_NAME "${TOOLCHAIN_ARCH}")
 string(REGEX REPLACE ".*-"        ""    TOOLCHAIN_ABI "${TOOLCHAIN_ARCH}")
 
+set(CMAKE_SYSTEM_VERSION 1)
+
 if (CMAKE_SYSTEM_NAME STREQUAL "w64")
   set(CMAKE_SYSTEM_NAME Windows)
 elseif (CMAKE_SYSTEM_NAME STREQUAL "none" OR CMAKE_SYSTEM_NAME STREQUAL "unknown")
   set(CMAKE_SYSTEM_NAME Generic)
-elseif (CMAKE_SYSTEM_NAME STREQUAL "apple")  
+elseif (CMAKE_SYSTEM_NAME STREQUAL "apple")
   # This is LLVM-based for now, since there is no aarch64-apple-darwin-gcc yet. Use a single LLVM dir for multiple targets
   set(CMAKE_SYSTEM_NAME Darwin)
+  string(REGEX REPLACE ".*darwin" "" CMAKE_SYSTEM_VERSION "${TOOLCHAIN_ARCH}")
 else()
   set(CMAKE_SYSTEM_NAME Linux)
 endif()
-
-set(CMAKE_SYSTEM_VERSION 1)
 
 set(TOOLCHAIN_PREFIX "${TOOLCHAIN_ARCH}")
 if (TOOLCHAIN_ABI MATCHES "gnu")
@@ -153,6 +154,12 @@ if (TOOLCHAIN_IS_CLANG)
   set(CMAKE_RANLIB "${TOOLCHAIN_ROOT}/bin/llvm-ranlib${CMAKE_EXECUTABLE_SUFFIX}" CACHE STRING "" FORCE)
   set(CMAKE_STRIP "${TOOLCHAIN_ROOT}/bin/llvm-strip${CMAKE_EXECUTABLE_SUFFIX}" CACHE STRING "" FORCE)
 endif()
+
+set(CMAKE_LINK_LIBRARY_USING_WHOLE_ARCHIVE "LINKER:--whole-archive"
+                                           "<LINK_ITEM>"
+                                           "LINKER:--no-whole-archive")
+set(CMAKE_LINK_LIBRARY_USING_WHOLE_ARCHIVE_SUPPORTED TRUE)
+set(CMAKE_LINK_LIBRARY_WHOLE_ARCHIVE_ATTRIBUTES LIBRARY_TYPE=STATIC DEDUPLICATION=YES OVERRIDE=DEFAULT)
 
 #######################################################
 # search paths
