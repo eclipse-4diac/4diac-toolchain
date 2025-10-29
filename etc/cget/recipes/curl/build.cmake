@@ -40,3 +40,10 @@ if (WIN32)
 endif()
 
 include(${CGET_CMAKE_ORIGINAL_SOURCE_FILE})
+
+include(toolchain-utils)
+download_extra_source(cacert curl-ca-bundle.crt
+    https://curl.se/ca/cacert-2025-09-09.pem
+    f290e6acaf904a4121424ca3ebdd70652780707e28e8af999221786b86bb1975)
+
+install(FILES "${SOURCE_cacert}" DESTINATION etc/ssl)

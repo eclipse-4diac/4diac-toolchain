@@ -6,13 +6,17 @@
 # http://www.eclipse.org/legal/epl-2.0.
 #
 # SPDX-License-Identifier: EPL-2.0
-# 
+#
 # Contributors:
 #    Jörg Walter - initial implementation
 # *******************************************************************************/
 
 cmake_minimum_required(VERSION 3.10)
 project(git C)
+
+include(toolchain-utils)
+patch(http.c "curl_easy_setopt\\(result, CURLOPT_CAPATH, ssl_capath\\);"
+	"curl_easy_setopt(result, CURLOPT_CAPATH, ssl_capath);\ncurl_easy_setopt(result, CURLOPT_CAINFO, getenv(\"CURL_CA_BUNDLE\"));")
 
 set(MAKEFILE_OPTIONS
 	NO_PERL=YesPlease NO_EXPAT=YesPlease NO_GETTEXT=YesPlease NO_TCLTK=YesPlease NO_PYTHON=YesPlease NO_REGEX=NeedsStartEnd NO_SVN_TESTS=YesPlease NO_GITWEB=YesPlease

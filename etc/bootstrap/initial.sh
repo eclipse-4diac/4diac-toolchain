@@ -303,6 +303,7 @@ stage3() {
 	stage "Stage 3: final toolchain environment"
 	echo "include(\${CMAKE_CURRENT_LIST_DIR}/$arch.cmake)" > bootstrap/native-toolchain.cmake
 	echo "set(CMAKE_CROSSCOMPILING OFF)" >> bootstrap/native-toolchain.cmake
+	ln -s ../../../etc/ssl/curl-ca-bundle.crt bootstrap/etc/ssl/
 	bootstrap/etc/bootstrap/bootstrap.sh "$arch" .
 	bin/cget init -t native-toolchain.cmake --ccache -DCMAKE_BUILD_TYPE=Release
 } 
@@ -322,6 +323,7 @@ export LC_ALL=C
 export CGET_CACHE_DIR="$PWD/download-cache"
 export CCACHE_CONFIGPATH="$PWD/etc/ccache.conf"
 export CCACHE_DIR="$PWD/.cache/ccache"
+export CURL_CA_BUNDLE="$PWD/etc/ssl/curl-ca-bundle.crt"
 
 if [ "$rebuild" = 1 ]; then
 	rm -rf bootstrap final
