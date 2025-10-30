@@ -18,6 +18,9 @@ include(toolchain-utils)
 include(${CGET_RECIPE_DIR}/../clang-bootstrap/helpers.cmake)
 include(${CGET_RECIPE_DIR}/../clang/llvm-config-options.cmake)
 
+# FIXME: timezone handling might be broken on MacOS
+patch(libcxx/src/experimental/tzdb.cpp "defined\\(__linux__\\)" "1")
+
 foreach(LLVM_ARCH ${LLVM_ARCH_LIST})
 	set(LLVM_SYSROOT "lib/clang/${LLVM_MAJOR_VERSION}/lib/${LLVM_ARCH}")
 	set(LLVM_COMPILER_ARGS
@@ -31,10 +34,15 @@ foreach(LLVM_ARCH ${LLVM_ARCH_LIST})
 		"LDFLAGS=-static --sysroot=${HOST_TOOLCHAIN}/${LLVM_SYSROOT} -L ${HOST_TOOLCHAIN}/${LLVM_SYSROOT}"
 	)
 
+	set(arch_config)
+	if (NOT LLVM_ARCH MATCHES "musl")
+		set(arch_config -DLIBCXX_HAS_MUSL_LIBC=OFF)
+	endif ()
+
 	file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/cxx-${LLVM_ARCH}")
 	add_custom_target(cxx-${LLVM_ARCH} ALL
 		WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cxx-${LLVM_ARCH}
-		COMMAND ${CMD_SET_PATH} ${LLVM_COMPILER_ARGS} ${CMAKE_COMMAND} ${CMAKE_CURRENT_SOURCE_DIR}/runtimes ${LLVM_CONFIG_OPTIONS} "-DLLVM_ENABLE_RUNTIMES=libcxx;libcxxabi;libunwind" "-DCMAKE_INSTALL_PREFIX=${LLVM_INSTALL_PREFIX}/${LLVM_SYSROOT}/usr" "-DLLVM_DEFAULT_TARGET_TRIPLE=${LLVM_ARCH}" "-DLLVM_HOST_TRIPLE=${LLVM_ARCH}" -DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=OFF
+		COMMAND ${CMD_SET_PATH} ${LLVM_COMPILER_ARGS} ${CMAKE_COMMAND} ${CMAKE_CURRENT_SOURCE_DIR}/runtimes ${LLVM_CONFIG_OPTIONS} ${arch_config} "-DLLVM_ENABLE_RUNTIMES=libcxx;libcxxabi;libunwind" "-DCMAKE_INSTALL_PREFIX=${LLVM_INSTALL_PREFIX}/${LLVM_SYSROOT}/usr" "-DLLVM_DEFAULT_TARGET_TRIPLE=${LLVM_ARCH}" "-DLLVM_HOST_TRIPLE=${LLVM_ARCH}" -DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=OFF
 		COMMAND ${CMD_SET_PATH} ninja unwind cxxabi cxx
 		COMMAND ${CMD_SET_PATH} ninja install-unwind install-cxxabi install-cxx
 		COMMAND mkdir -p "${LLVM_INSTALL_PREFIX}/${LLVM_SYSROOT}/usr/include/sys/"
@@ -45,6 +53,10 @@ foreach(LLVM_ARCH ${LLVM_ARCH_LIST})
 		COMMAND echo ================ libcxx ${LLVM_ARCH} done ==========
 		VERBATIM
 	)
+
+	if (NOT LLVM_ARCH MATCHES "musl")
+		continue()
+	endif ()
 
 	set(LLVM_RT_ARGS
 		"CFLAGS=-O3 --sysroot=${LLVM_INSTALL_PREFIX}/${LLVM_SYSROOT} -isystem ${LLVM_INSTALL_PREFIX}/${LLVM_SYSROOT}/usr/include/c++/v1 -isystem ${TARGET_TOOLCHAIN}/${LLVM_SYSROOT}/usr/include"

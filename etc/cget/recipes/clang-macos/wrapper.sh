@@ -53,6 +53,10 @@ clangver="$(cd "$root/lib/clang"; echo *)"
 
 [ -n "$OCDEBUG" ] && set -x
 
+libroot="$root/lib/clang/$clangver"
+stdinc="$libroot/include"                    
+stdincpp="$libroot/lib/$triple/usr/include/c++/v1"                    
+
 # remove "-static" and "-flto" flags, not supported on macos
 set -- "$@" --end-of-argument-list--
 while true; do
@@ -63,6 +67,8 @@ while true; do
 		-static | --static | -static-libgcc) continue;;
 		-flto | -ffat-lto-objects) continue;;
 		--sysroot=*) continue;;
+		-nostdinc) stdinc="";;
+		-nostdinc++) stdincpp="";;
 		-Wl,--start-group | -Wl,--end-group) continue;;
 		-Wl,-Map,* | -Wl,--warn-common) continue;;
 		-finline-limit=* | -falign-jumps=* | -falign-labels=*) continue;;
@@ -75,8 +81,9 @@ exec "$bin/$tool" \
 	-target "$triple" \
 	-mlinker-version=134.9 \
 	--sysroot="$root/SDK/$sdk" \
-	-isystem "$root/SDK/$sdk/usr/include/c++/v1" \
-	-isystem "$root/lib/clang/$clangver/include" \
+	-L "$libroot/lib/$triple/usr/lib" \
+	${stdincpp:+-isystem} "$stdincpp" \
+	${stdinc:+-isystem} "$stdinc" \
 	-mmacosx-version-min="$sdkver.0" \
 	-arch "$arch" \
 	-fuse-ld=lld \
