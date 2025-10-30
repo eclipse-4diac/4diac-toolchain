@@ -34,7 +34,7 @@ set(LLVM_SYSROOT "lib/clang/${LLVM_MAJOR_VERSION}/lib/${LLVM_ARCH}")
 set(CMD_SET_PATH "${TOOLCHAINS_ROOT}/bin/env" "PATH=${TOOLCHAINS_ROOT}/bin:${TOOLCHAINS_ROOT}/clang-toolchain/bin:${TOOLCHAINS_ROOT}/x86_64-linux-musl/bin:${TOOLCHAINS_ROOT}/aarch64-linux-musl/bin")
 set(CMD_JOIN_ARCHIVES ${CMD_SET_PATH} "${TOOLCHAINS_ROOT}/bin/sh" "${CGET_RECIPE_DIR}/../clang-bootstrap/join-archives.sh")
 
-file(GLOB LLVM_ARCH_LIST RELATIVE "${TARGET_TOOLCHAIN}/lib/clang/${LLVM_MAJOR_VERSION}/lib/" "${TARGET_TOOLCHAIN}/lib/clang/${LLVM_MAJOR_VERSION}/lib/*-linux-*")
+file(GLOB LLVM_ARCH_LIST RELATIVE "${TARGET_TOOLCHAIN}/lib/clang/${LLVM_MAJOR_VERSION}/lib/" "${TARGET_TOOLCHAIN}/lib/clang/${LLVM_MAJOR_VERSION}/lib/*-*")
 
 include(ProcessorCount)
 ProcessorCount(CPUS)

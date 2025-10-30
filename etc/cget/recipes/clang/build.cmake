@@ -46,6 +46,7 @@ add_custom_target(fixup ALL
 	COMMAND ${CMD_SET_PATH} sh -c "for i in bin/*; do [ -L \"$i\" ] || bin/llvm-strip -s \"$i\" 2>/dev/null; done"
 	COMMAND ${CMD_SET_PATH} sh -c "rm -f lib/*.a"
 	COMMAND ${CMD_SET_PATH} rm -rf include share
+	COMMAND ${CMD_SET_PATH} rm -rf "${CMAKE_INSTALL_PREFIX}/clang-toolchain/bootstrap"
 	COMMAND echo ================ fixup done ==========
 	VERBATIM
 )
