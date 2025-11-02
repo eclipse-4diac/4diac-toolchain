@@ -36,7 +36,7 @@ if [ "$(sha256sum < "$downloaddir/$file")" != "$releasehash  -" ]; then
 fi
 
 echo "Unpacking $file..."
-find * > installer/filelist.txt
+find * -type f > installer/filelist.txt
 count=0
 lzip -d < "$downloaddir/$file" | tar xv -X installer/filelist.txt | while read line; do
 	count="$((count+1))"

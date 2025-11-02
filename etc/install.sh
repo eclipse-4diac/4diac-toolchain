@@ -37,10 +37,10 @@ Darwin)
 	die "System $host is not supported.";;
 esac
 
-installer="4diac-fbe-installer-v2-$triplet.tar.gz"
+installer="4diac-fbe-installer-v3-$triplet.tar.gz"
 case "$triplet" in
-aarch64-apple-darwin20.2) installerhash='95fd60207745644da0f041589cb01132a831503c64dddb931c4e32cda7f06661';;
-x86_64-linux-musl) installerhash='016cf526f24b2acbfbf086f678d8f9d5b6f4b274874ae6f09f3b286309f14ede';;
+aarch64-apple-darwin20.2) installerhash='63208bcf50d4129e2ebf26231f150703b6f56cfd098bb1d5adfbbb425f94b064';;
+x86_64-linux-musl) installerhash='b5f5a96ed6091f49c3ace0161e452eaf19aa95c8556ff3d9943f8452b133cc0d';;
 *) die "System $triplet has no binary releases.";;
 esac
 
