@@ -26,8 +26,8 @@ if (-not (Test-Path "bin\sh.exe")) {
 	if ("$downloaddir" -eq "") {
 		$downloaddir="$PWD"
 	}
-	$installer="4diac-fbe-installer-v2-$triplet.zip"
-	$installerhash='48ff9c6d5401ac688e40849df5e10847a2ee5c195bb4be880c51ce95ebac6f32'
+	$installer="4diac-fbe-installer-v3-$triplet.zip"
+	$installerhash='76762be079eebebad5a2d41492a209b55ec0ee60591515ae693a64c128c69f5b'
 	if (-not (Test-Path "$downloaddir\$installer")) {
 		$downloaddir="$Env:CGET_CACHE_DIR"
 		if ("$downloaddir" -eq "") {
