@@ -1,4 +1,5 @@
 /cget
+/doc/cmake-*
 /release-*
 /download-cache
 /.cache
