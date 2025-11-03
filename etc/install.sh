@@ -44,10 +44,10 @@ x86_64-linux-musl) installerhash='016cf526f24b2acbfbf086f678d8f9d5b6f4b274874ae6
 *) die "System $triplet has no binary releases.";;
 esac
 
-release='2025-01'
+release='2025-02'
 case "$triplet" in
-aarch64-apple-darwin20.2) releasehash='3c7879d6015b7bc40eafa3ad89278603cb8fcdcc45e8e473b6a2fa41b144b0a0';;
-x86_64-linux-musl) releasehash='00455ee854c469f745879b9568f7e2c3c57cd6e19d4830dfc0c319f95d438a7c';;
+aarch64-apple-darwin20.2) releasehash='c9e71cedee55d9b6d3ce8214e01b8cc73a79936583e405f793fb2ba792394c5b';;
+x86_64-linux-musl) releasehash='186339b0b885ebf3a728dfc912df1ff5df951848bff31c9b00e894b0242bf475';;
 esac
 
 fetch_file_authenticated() {
