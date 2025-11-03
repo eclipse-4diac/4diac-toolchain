@@ -28,7 +28,7 @@ set(TARGETS
   "riscv32-unknown-elf,--with-arch=rv32i --with-abi=ilp32" # FIXME: this may need to be rv32i_zicsr_zifencei, see https://github.com/riscv-collab/riscv-gnu-toolchain/issues/1315
   "i686-w64-mingw32"
   "x86_64-w64-mingw32"
-	CACHE STRINGS "List of Targets (optionally with comma-separated default CPU) to build cross-compilers for, e.g. i686-w64-mingw32;aarch64-linux-musl;arm-linux-musleabihf,--with-cpu=arm1176jzf-s")
+	CACHE STRING "List of Targets (optionally with comma-separated default CPU) to build cross-compilers for, e.g. i686-w64-mingw32;aarch64-linux-musl;arm-linux-musleabihf,--with-cpu=arm1176jzf-s")
 ##############################################################
 
 # use global cache dir
@@ -165,6 +165,8 @@ add_custom_command(
   COMMAND patch -p 1 -i ${CGET_RECIPE_DIR}/mingw.diff
   # NOTE: the newlib patch has only been tested with ARM targets right now
   COMMAND patch -p 1 -i ${CGET_RECIPE_DIR}/newlib.diff
+  COMMAND mv patches/gcc-12.2.0 patches/gcc-13.2.0
+  COMMAND cp ${CGET_RECIPE_DIR}/gcc-5.4.0-locale.patch patches/gcc-13.2.0/
   # prevent redownloading of files due to too new timestamps
   COMMAND touch -t 200001011200 hashes/*.sha1
   COMMAND make -w -j${CPUS} TARGET=${ARCH} HOST=${HOST}
