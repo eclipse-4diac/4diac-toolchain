@@ -81,20 +81,31 @@ set(TOOLCHAIN_COMMON_LINKER_FLAGS " -L${CGET_PREFIX}/lib")
 if (TOOLCHAIN_ABI MATCHES "gnu")
   # "-rpath=$ORIGIN" makes dynamically linked distribution easier
   string(APPEND TOOLCHAIN_COMMON_LINKER_FLAGS " -Wl,-rpath=\\$ORIGIN")
+  # debug symbol compression
+  string(APPEND TOOLCHAIN_COMMON_C_FLAGS " -gz")
+  string(APPEND TOOLCHAIN_COMMON_LINKER_FLAGS " -gz")
 
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Windows")
   # mingw has regex not built in, also sometimes ssp is required
   set(CMAKE_C_STANDARD_LIBRARIES "-lssp -lregex" CACHE STRING "")
   set(CMAKE_CXX_STANDARD_LIBRARIES "-lssp -lregex" CACHE STRING "")
   string(APPEND TOOLCHAIN_COMMON_LINKER_FLAGS " -static --static")
+  # debug symbol compression; only supported in the assembler, and only the old gnu-specific variant
+  string(APPEND TOOLCHAIN_COMMON_C_FLAGS " -Wa,--compress-debug-symbols")
 
 elseif (TOOLCHAIN_IS_CLANG)
   string(APPEND TOOLCHAIN_COMMON_C_FLAGS " --sysroot=${TOOLCHAIN_ROOT}/lib/clang/21/lib/${TOOLCHAIN_ARCH}")
   string(APPEND TOOLCHAIN_COMMON_LINKER_FLAGS " --sysroot=${TOOLCHAIN_ROOT}/lib/clang/21/lib/${TOOLCHAIN_ARCH}")
   string(APPEND TOOLCHAIN_COMMON_LINKER_FLAGS " -static --static")
+  # debug symbol compression
+  string(APPEND TOOLCHAIN_COMMON_C_FLAGS " -gz=zstd")
+  string(APPEND TOOLCHAIN_COMMON_LINKER_FLAGS " -gz=zstd")
 
 else()
   string(APPEND TOOLCHAIN_COMMON_LINKER_FLAGS " -static --static")
+  # debug symbol compression
+  string(APPEND TOOLCHAIN_COMMON_C_FLAGS " -gz=zstd")
+  string(APPEND TOOLCHAIN_COMMON_LINKER_FLAGS " -gz=zstd")
 
 endif()
 
