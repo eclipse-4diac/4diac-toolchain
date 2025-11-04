@@ -103,6 +103,7 @@ file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/config.mak
   "COMMON_CONFIG += CFLAGS='${CMAKE_C_FLAGS} ${EXTRA_CFLAGS} -fno-lto' CXXFLAGS='${CMAKE_CXX_FLAGS} ${EXTRA_CFLAGS} -fno-lto' LDFLAGS='${CMAKE_EXE_LINKER_FLAGS} -fno-lto'\n"
   "COMMON_CONFIG += --with-debug-prefix-map=$(CURDIR)= --disable-nls --disable-shared --enable-deterministic-archives\n"
   "COMMON_CONFIG += --disable-gprofng --disable-gcov\n"
+  "BINUTILS_CONFIG += --enable-compressed-debug-sections=all --with-zstd host_configargs='ZSTD_CFLAGS=-DHAVE_ZSTD=1 ZSTD_LIBS=-lzstd'\n"
   "GCC_CONFIG += --enable-languages=c,lto,c++ --disable-multilib $(MCPU)\n"
   "GCC_CONFIG += --enable-libatomic --enable-threads=posix --enable-graphite --enable-libstdcxx-filesystem-ts=yes --enable-libstdcxx-backtrace=yes --with-zstd --disable-libstdcxx-pch --disable-lto --disable-win32-registry --disable-symvers --disable-plugin --disable-werror --disable-rpath --with-gnu-as --with-gnu-ld --disable-sjlj-exceptions --with-dwarf2 --enable-large-address-aware\n"
   "DL_CMD = curl -Lk -f --progress-bar -o\n"
@@ -182,7 +183,17 @@ foreach (ARCH IN LISTS TARGETS)
             OUTPUT=${CMAKE_CURRENT_BINARY_DIR}/${ARCH} MCPU=${MCPU} install
     COMMAND touch .${ARCH}-installed
   )
-  add_custom_target(toolchain-${ARCH} ALL DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/.${ARCH}-installed)
+
+  # sometimes the executables don't get their platform prefix. fix that.
+  add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/.${ARCH}-fixed
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/.${ARCH}-installed
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${ARCH}/bin/"
+    COMMAND sh -c "for i in *; do case \"\$i\" in *-*-*-*) ;; *) mv \"\$i\" \"${ARCH}-\$i\";; esac; done"
+    COMMAND touch .${ARCH}-fixed
+    VERBATIM
+  )
+  add_custom_target(toolchain-${ARCH} ALL DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/.${ARCH}-fixed)
 
   if (ARCH MATCHES "mingw32")
     # add regex library that is needed for c++11 support, use a temporary cget config
