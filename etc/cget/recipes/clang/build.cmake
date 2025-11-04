@@ -29,6 +29,10 @@ set(LLVM_COMPILER_ARGS
 	"LDFLAGS=-static -stdlib=libc++ -rtlib=compiler-rt -unwindlib=libunwind --gcc-toolchain=/nonexistant"
 )
 
+if (APPLE)
+	list(APPEND LLVM_CONFIG_OPTIONS "-DCMAKE_SYSROOT=${CGET_PREFIX}")
+endif ()
+
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/stage2)
 add_custom_target(clang ALL
 	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/stage2
