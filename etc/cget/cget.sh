@@ -177,6 +177,7 @@ init_cmdline() {
 		unset "$i"
 	done
 
+	defs="$defs-DCMAKE_BUILD_TYPE=MinSizeRel"
 	init_shared="OFF"
 	toplevel="1"
 }
@@ -218,6 +219,7 @@ parse_cmdline() {
 				shift 2;; # disallow subdirs for security reasons
 			-H|--hash) ensure install build remove; hash="$2"; shift 2;;
 			--release) ensure install build remove; defs="$defs-DCMAKE_BUILD_TYPE=Release"; shift;;
+			--minsizerel) ensure install build remove; defs="$defs-DCMAKE_BUILD_TYPE=MinSizeRel"; shift;;
 			--debug) ensure install build remove; defs="$defs-DCMAKE_BUILD_TYPE=Debug"; shift;;
 
 			-c|--configure) ensure build; build_configure=1; shift;;

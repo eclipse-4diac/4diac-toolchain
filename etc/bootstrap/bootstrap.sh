@@ -51,9 +51,9 @@ echo "set(CMAKE_CROSSCOMPILING OFF)" >> "${destdir}/native-toolchain.cmake"
 
 # initialize cget
 if [ "$toolchain" = "$destdir/bootstrap" ]; then
-	cget init --ccache -t "${toolchain}/native-toolchain.cmake" -DCMAKE_BUILD_TYPE=Release
+	cget init --ccache -t "${toolchain}/native-toolchain.cmake" -DCMAKE_BUILD_TYPE=MinSizeRel
 else
-	cget init --ccache -t "${toolchain}/$target.cmake" -DCMAKE_BUILD_TYPE=Release
+	cget init --ccache -t "${toolchain}/$target.cmake" -DCMAKE_BUILD_TYPE=MinSizeRel
 fi
 
 # install native toolchain

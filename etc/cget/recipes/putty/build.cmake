@@ -16,6 +16,7 @@ project(putty C)
 
 include(toolchain-utils)
 
+set(CMAKE_BUILD_TYPE RelWithDebInfo)
 include(${CGET_CMAKE_ORIGINAL_SOURCE_FILE})
 
 set_target_properties(pscp PROPERTIES OUTPUT_NAME scp)

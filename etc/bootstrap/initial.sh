@@ -249,7 +249,7 @@ stage2() {
 
 
 	sh etc/cget/cget.sh init --ccache --ldflags "-static" \
-		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_BUILD_TYPE=MinSizeRel \
 		-DCMAKE_C_COMPILER="$CC" -DCMAKE_CXX_COMPILER="$CXX" \
 		-DCMAKE_LINK_SEARCH_START_STATIC=ON -DCMAKE_LINK_SEARCH_END_STATIC=ON \
 		-DCMAKE_MAKE_PROGRAM="$bootstrap/bin/make" -DTOOLCHAINS_ROOT="$PWD"
@@ -295,7 +295,7 @@ stage2() {
 	ln -sf ../../lib/python3.12 lib/
 
 	unset CC CXX AR LD CMAKE_BOOTSTRAP_EXEC
-	bin/cget init -t "$arch.cmake" --ccache -DCMAKE_BUILD_TYPE=Release
+	bin/cget init -t "$arch.cmake" --ccache -DCMAKE_BUILD_TYPE=MinSizeRel
 }
 
 # build final toolchain environment using the common build script
@@ -303,9 +303,9 @@ stage3() {
 	stage "Stage 3: final toolchain environment"
 	echo "include(\${CMAKE_CURRENT_LIST_DIR}/$arch.cmake)" > bootstrap/native-toolchain.cmake
 	echo "set(CMAKE_CROSSCOMPILING OFF)" >> bootstrap/native-toolchain.cmake
-	ln -s ../../../etc/ssl/curl-ca-bundle.crt bootstrap/etc/ssl/
+	ln -s ../../../etc/ssl/curl-ca-bundle.crt bootstrap/etc/ssl/ || true
 	bootstrap/etc/bootstrap/bootstrap.sh "$arch" .
-	bin/cget init -t native-toolchain.cmake --ccache -DCMAKE_BUILD_TYPE=Release
+	bin/cget init -t native-toolchain.cmake --ccache -DCMAKE_BUILD_TYPE=MinSizeRel
 } 
 
 
