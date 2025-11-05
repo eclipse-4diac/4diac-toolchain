@@ -70,7 +70,7 @@ is_windows() { [ "$(uname -s)" = "Windows_NT" ]; }
 sha256sum() { cmake -E sha256sum "$@"; }
 md5sum() { cmake -E md5sum "$@"; }
 extract() { cmake -E tar xf "$@"; }
-downloadfile() { COLUMNS=60 curl -f --progress-bar -L -k -o "$1" "$2"; }
+downloadfile() { COLUMNS=60 curl --retry 5 --retry-all-errors -f --progress-bar -L -k -o "$1" "$2"; }
 # make bootstrapping easier
 type curl &> /dev/null || downloadfile() { cmake -Dfile="$1" -DURL="$2" -P "$exe"; }
 

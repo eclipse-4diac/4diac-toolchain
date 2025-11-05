@@ -50,7 +50,7 @@ fetch_file_authenticated() {
         if [ ! -f "$download" ]; then
                 mkdir -p "$(dirname "$download")"
                 echo "### Downloading cross-compiler toolchain $url..."
-                COLUMNS=60 curl -f --progress-bar --location --disable --insecure -o "$download" "$url"
+                COLUMNS=60 curl --retry 5 --retry-all-errors -f --progress-bar --location --disable --insecure -o "$download" "$url"
         fi
 
         if [ "$(sha256sum < "$download")" != "$hash  -" ]; then
