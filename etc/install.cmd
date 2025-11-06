@@ -18,8 +18,8 @@ if ("$PWD" -match ".*\\etc$") {
 
 if (-not (Test-Path "bin\sh.exe")) {
 	$baseurl = "https://sourceforge.net/projects/fordiac/files/4diac-fbe"
-	$release='2025-10'
-	$releasehash='9caa4e039f87a1ddeeafcfe242894e289b8bef802aa6adc7819af36b45b0b342'
+	$release='2025-11'
+	$releasehash='50a3c5f2de63e6f9d431b731a1df4a5edc97cfe5b0eedec0285ec4b12137c813'
 
 	$triplet="x86_64-w64-mingw32"
 	$downloaddir="$Env:CGET_DOWNLOADS_DIR"
