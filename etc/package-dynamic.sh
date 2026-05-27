@@ -7,7 +7,7 @@
 # http://www.eclipse.org/legal/epl-2.0.
 #
 # SPDX-License-Identifier: EPL-2.0
-# 
+#
 # Contributors:
 #    Jörg Walter - initial implementation
 # *******************************************************************************/
@@ -29,9 +29,8 @@
 #   path. The drawback is that the binary must be started with its own directory
 #   as the working directory, it cannot sensibly be put into $PATH.
 #
-# This script implements the third solution, despite its noticeable drawback.
-# Unfortunately, the other two variants have proven to be unreliable in
-# various corner cases. 
+# This script used to implement the third solution, but recent improvements in the
+# dynamic linker now make the first solution work well.
 #
 
 [ "$1" = "native-toolchain" ] && exit 0
@@ -39,20 +38,22 @@
 # initialisation
 set -e
 toolchains="$(cd "$(dirname "$0")/.."; pwd)"
-toolchain="$toolchains/$1"
+arch="$1"
+toolchain="$toolchains/$arch"
 bin="$2"
 
-[ -f "$bin" -a -f "$toolchain.cmake" -a -d "$toolchain" ] || { echo "Usage: $0 <target> <binary>" >&2; exit 1; }
+[ ! -f "$bin.exe" ] || exit 0 # not supported for windows executables
+[ -f "$bin" -a -f "$toolchain.cmake" ] || { echo "Usage: $0 <target> <binary>" >&2; exit 1; }
+[ -d "$toolchain" ] || toolchain="$toolchains/clang-toolchain"
 
 # find correct tools
 bindir="$(cd "$(dirname "$bin")"; pwd)/bundle"
 PATH="$toolchains/bin"
-objdump="$toolchain/bin/$(ls "$toolchain/bin/" | grep 'objdump$' | head -n 1)"
+objdump="$toolchain/bin/$(ls "$toolchain/bin/" | grep -E 'objdump(\.exe)?$' | head -n 1)"
 gcc="$toolchain/bin/$(ls "$toolchain/bin/" | grep 'gcc$' | head -n 1)"
 
 # check applicability
 if ! "$objdump" -p "$bin" | grep DYNAMIC >/dev/null; then
-	echo "Not a dynamic executable, no packaging needed."
 	exit 0
 fi
 
@@ -68,7 +69,8 @@ copy_libs() {
 	"$objdump" -p "$1" | while read type lib; do
 		[ "$type" = "NEEDED" ] || continue
 		[ ! -f "$bindir/$lib" ] || continue
-		find "$toolchain" -name "$lib" -exec cp {} "$bindir/" ';'
+		find "$bindir/../../../lib" -name "$lib" -exec cp {} "$bindir/" ';'
+		find "$toolchain/${arch%%-*}-buildroot-${arch#*-}/sysroot" -name "$lib" -exec cp {} "$bindir/" ';'
 		copy_libs "$bindir/$lib"
 	done
 }
@@ -84,19 +86,14 @@ done
 interp="$(strings "$bin" | grep '^/.*/ld' | head -n 1)"
 interp="${interp##*/}"
 find "$toolchain" -name "$interp" -exec cp {} "$bindir/" ';'
-patchelf --set-interpreter "./bundle/$interp" "$bin"
 
 
-cat << 'EOF' > "$bindir/../forte"
+cat << EOF > "$bindir/../forte"
 #!/bin/sh
-rundir="$PWD"
-cd "$(dirname "$0")"
-if [ "$PWD" != "$rundir" ]; then
-	echo "Warning: This self-contained executable will be run from '$PWD'. If your program accesses files using relative paths, it may break." >&2
-fi
+bundle="\$(cd "\$(dirname "\$0")"; pwd)/bundle"
 unset LD_PRELOAD
-export LD_LIBRARY_PATH="$PWD/bundle"
-exec "$PWD/bundle/forte" "$@"
+unset LD_LIBRARY_PATH
+exec "\$bundle/$interp" --library-path "\$bundle" --inhibit-cache --argv0 "\$0" "\$bundle/forte" "\$@"
 EOF
 chmod 755 "$bindir/../forte"
 

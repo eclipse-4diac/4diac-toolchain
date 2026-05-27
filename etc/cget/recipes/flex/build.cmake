@@ -11,11 +11,15 @@
 #    Jörg Walter - initial implementation
 # *******************************************************************************/
 
-PROJECT(flex C)
-CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
+project(flex C)
 
-if(MINGW)
-	file(MAKE_DIRECTORY sys)
+include(toolchain-utils)
+patch(lib/malloc.c "void .malloc ..;" "#include <stdlib.h>")
+patch(src/config.h.in "#undef (malloc|realloc)" "")
+
+if (MINGW)
+  file(MAKE_DIRECTORY sys)
   file(WRITE sys/wait.h [=[
 #define wait(x) -1
 #define WIFEXITED(x) 1
@@ -35,13 +39,12 @@ endif()
 
 # needed when cross-compiling
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
-
 set(AUTOTOOLS_CONFIGURE_OPTIONS
   "--disable-libfl"
   "--disable-bootstrap"
   "--disable-nls"
   "--disable-shared")
-set(AUTOTOOLS_C_FLAGS "-I${CMAKE_CURRENT_SOURCE_DIR}")
+set(AUTOTOOLS_C_FLAGS "-I${CMAKE_CURRENT_SOURCE_DIR} -Wno-int-conversion")
 set(AUTOTOOLS_TARGET "-C" "src")
 
 install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/src/flex${CMAKE_EXECUTABLE_SUFFIX} DESTINATION bin)

@@ -11,8 +11,8 @@
 #    Jörg Walter - initial implementation
 # *******************************************************************************/
 
-PROJECT(CURL C)
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.10)
+project(CURL C)
 
 set(CURL_STATICLIB ON CACHE BOOL "")
 set(CURL_DISABLE_LDAP ON CACHE BOOL "")
@@ -20,6 +20,8 @@ set(CMAKE_USE_LIBSSH2 OFF CACHE BOOL "")
 set(CMAKE_USE_GSSAPI OFF CACHE BOOL "")
 set(CURL_ENABLE_SSL ON CACHE BOOL "")
 set(CURL_USE_OPENSSL ON CACHE BOOL "")
+set(CURL_USE_LIBPSL OFF CACHE BOOL "")
+set(CURL_ZSTD OFF CACHE BOOL "")
 set(ENABLE_UNIX_SOCKETS OFF CACHE BOOL "")
 set(ENABLE_MANUAL OFF CACHE BOOL "")
 
@@ -33,7 +35,15 @@ set(HAVE_GLIBC_STRERROR_R__TRYRUN_OUTPUT "" CACHE STRING "")
 add_definitions(-DCURL_CA_FALLBACK=1)
 
 if (WIN32)
-       add_compile_definitions(_WIN32_WINNT=0x0501)
+  add_definitions(-D_WIN32_WINNT=0x0501)
+  set(HAVE_WIN32_WINNT 0x0501)
 endif()
 
 include(${CGET_CMAKE_ORIGINAL_SOURCE_FILE})
+
+include(toolchain-utils)
+download_extra_source(cacert curl-ca-bundle.crt
+    https://curl.se/ca/cacert-2025-09-09.pem
+    f290e6acaf904a4121424ca3ebdd70652780707e28e8af999221786b86bb1975)
+
+install(FILES "${SOURCE_cacert}" DESTINATION etc/ssl)

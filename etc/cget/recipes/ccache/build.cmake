@@ -11,9 +11,10 @@
 #    Jörg Walter - initial implementation
 # *******************************************************************************/
 
-PROJECT(ccache C)
-CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
+project(ccache CXX)
 
-install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/ccache${CMAKE_EXECUTABLE_SUFFIX} DESTINATION bin)
+include(toolchain-utils)
+patch(src/third_party/fmt/fmt/base.h "#ifndef FMT_MODULE" "#ifndef FMT_MODULE\n#include <stdlib.h>")
 
-include(autotools-build)
+include(${CGET_CMAKE_ORIGINAL_SOURCE_FILE})

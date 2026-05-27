@@ -96,7 +96,7 @@ _fetch_file() {
 	download="$cachedir/sha256-$hash/$file"
 	if [ ! -f "$download" ]; then
 		mkdir -p "${download%/*}"
-		if type curl >/dev/null && curl --location --disable --insecure -o "$download" "$url"; then
+		if type curl >/dev/null && COLUMNS=60 curl -f --progress-bar --location --disable --insecure -o "$download" "$url"; then
 			: # obvious tool
 		elif type wget >/dev/null && wget --no-check-certificate -O "$download" "$url"; then
 			: # obvious tool
@@ -135,10 +135,11 @@ EOF
 build_busybox() {
 	! ( PATH="$PWD/bin"; type busybox 2>/dev/null; ) || return 0
 	msg "Building busybox..."
-	fetch_file busybox
+	# this is a known-good version, later versions fail mysteriously during boostrap
+	fetch_file 4e14b2a.tar.gz c401cd9aa500b36ef2e7cc5ea2d1286d88840e4069dd2a81219974ad65762d33 https://github.com/rmyorston/busybox-w32/archive/4e14b2a.tar.gz
 	tar xzf "$download"
 	cd busybox-w32-*
-	sh ../../etc/cget/recipes/busybox/build.sh ../bin
+	sh ../../etc/bootstrap/bootstrap-busybox.sh ../bin
 	cd ..
 	rm -r busybox-w32-*
 }
@@ -146,17 +147,17 @@ build_busybox() {
 build_make() {
 	! ( PATH="$PWD/bin"; type make 2>/dev/null; ) || return 0
 	msg "Building GNU make..."
-	fetch_file gnumake
+	fetch_file make-4.4.1.tar.gz dd16fb1d67bfab79a72f5e8390735c49e3e8e70b4945a15ab1f81ddb78658fb3 http://ftp.gnu.org/gnu/make/make-4.4.1.tar.gz
 	tar xzf "$download"
 	cd make-*
-	sh ../../etc/cget/recipes/gnumake/build.sh ../bin
+	sh ../../etc/bootstrap/bootstrap-gnumake.sh ../bin
 	cd ..
 	rm -rf make-*
 }
 
 
 build_cmake() {
-	! ( PATH="$PWD/bin:$PWD/cmake/Bootstrap.cmk"; type cmake 2>/dev/null; ) || return 0
+	! ( PATH="$PWD/bin:$PWD/cmake/bin"; type cmake 2>/dev/null; ) || return 0
 	msg "Building CMake (minimal)..."
 
 	# fetch the full version into the download cache, since bootstrap cmake can't download files
@@ -166,7 +167,7 @@ build_cmake() {
 	fetch_file "$fn" "$sha256" "$url"
 
 	# we use an older cmake for bootstrap as it is known to work in this limited environment
-	fetch_file cmake-3.13.2.tar.gz c925e7d2c5ba511a69f43543ed7b4182a7d446c274c7480d0e42cd933076ae25 https://github.com/Kitware/CMake/releases/download/v3.13.2/cmake-3.13.2.tar.gz
+	fetch_file cmake-3.16.9.tar.gz 1708361827a5a0de37d55f5c9698004c035abb1de6120a376d5d59a81630191f https://github.com/Kitware/CMake/releases/download/v3.16.9/cmake-3.16.9.tar.gz
 
 	tar xzf "$download"
 	rm -rf cmake
@@ -175,8 +176,10 @@ build_cmake() {
 	ccache="--enable-ccache"
 	type ccache 2>/dev/null || ccache=""
 	export CCACHE_COMPILERCHECK="string:$("${CXX}" -v 2>&1)"
-	sed -i -e 's/MINGW/Windows_NT/; s/pwd -W/pwd/' bootstrap
-    sh ./bootstrap --parallel="$CMAKE_BUILD_PARALLEL_LEVEL" LDFLAGS="-static" $ccache CC="$CC" CXX="$CXX" CFLAGS="-static" CXXFLAGS="-static"
+	echo 'set(CMAKE_USE_OPENSSL OFF CACHE BOOL "" FORCE)' > init.cmake
+	echo 'set(BUILD_TESTING OFF CACHE BOOL "" FORCE)' >> init.cmake
+        sh ./bootstrap --parallel="$CMAKE_BUILD_PARALLEL_LEVEL" LDFLAGS="-static" $ccache CC="$CC" CXX="$CXX" CFLAGS="-static" CXXFLAGS="-static" --init=init.cmake
+	make
 	unset CCACHE_COMPILERCHECK
 	cd ..
 	# bootstrap cmake needs the source dir, so keep it
@@ -205,10 +208,10 @@ stage1() {
 	[ ! -x "$CXX" -a ! -x "$bootstrap/bin/g++" ] || return 0
 
 	msg "Downloading pre-built bootstrap compiler"
-	bootlin_version=bleeding-edge-2021.11-5
+	bootlin_version=bleeding-edge-2024.02-1
 	urlarch="${arch%-linux-musl}"
 	[ "$urlarch" = "x86_64" ] && urlarch="x86-64"
-	fetch_file gcc-"$arch".tgz 468e6b73146595923fe87980a30adb54cd78f4c1e2f228e1a2c9bb705ea4243d \
+	fetch_file gcc-"$arch".tgz 91bd25e7a649e2f2aae93bebf58b4e9f57fae8daf8bf7e573975348e0bc38890 \
 		"https://toolchains.bootlin.com/downloads/releases/toolchains/$urlarch/tarballs/$urlarch--musl--$bootlin_version.tar.bz2"
 	with_system_tools tar xf "$download" 2>/dev/null
 	with_system_tools mv "$urlarch--musl--$bootlin_version" compiler
@@ -242,11 +245,11 @@ stage2() {
 
 	# Build and register the boostraped phase 1. CMake
 	build_cmake
-	export BOOTSTRAP_CMAKE="$bootstrap/cmake/Bootstrap.cmk/cmake"	
+	export BOOTSTRAP_CMAKE="$bootstrap/cmake/bin/cmake"	
 
 
 	sh etc/cget/cget.sh init --ccache --ldflags "-static" \
-		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_BUILD_TYPE=MinSizeRel \
 		-DCMAKE_C_COMPILER="$CC" -DCMAKE_CXX_COMPILER="$CXX" \
 		-DCMAKE_LINK_SEARCH_START_STATIC=ON -DCMAKE_LINK_SEARCH_END_STATIC=ON \
 		-DCMAKE_MAKE_PROGRAM="$bootstrap/bin/make" -DTOOLCHAINS_ROOT="$PWD"
@@ -272,6 +275,9 @@ stage2() {
 	cp etc/bootstrap/curl.sh bin/curl
 	chmod 755 bin/curl
 
+	msg "building zstd..."
+	sh etc/cget/cget.sh install zstd $builddir -G "Unix Makefiles" 
+
 	msg "building native compiler stage 1..."
 	sh etc/cget/cget.sh install --no-depends cross-toolchain $builddir -G "Unix Makefiles" \
 	   -DCMAKE_C_COMPILER="$CC" -DCMAKE_CXX_COMPILER="$CXX" -DTARGETS="$arch"
@@ -286,17 +292,20 @@ stage2() {
 
 	# provide symlinks for installation of python-related packages
 	ln -sf ../../bin/python bin/
-	ln -sf ../../lib/python3.9 lib/
+	ln -sf ../../lib/python3.12 lib/
 
 	unset CC CXX AR LD CMAKE_BOOTSTRAP_EXEC
-	bin/cget init -t "$arch.cmake" --ccache -DCMAKE_BUILD_TYPE=Release
+	bin/cget init -t "$arch.cmake" --ccache -DCMAKE_BUILD_TYPE=MinSizeRel
 }
 
 # build final toolchain environment using the common build script
 stage3() {
 	stage "Stage 3: final toolchain environment"
+	echo "include(\${CMAKE_CURRENT_LIST_DIR}/$arch.cmake)" > bootstrap/native-toolchain.cmake
+	echo "set(CMAKE_CROSSCOMPILING OFF)" >> bootstrap/native-toolchain.cmake
+	ln -s ../../../etc/ssl/curl-ca-bundle.crt bootstrap/etc/ssl/ || true
 	bootstrap/etc/bootstrap/bootstrap.sh "$arch" .
-	bin/cget init -t native-toolchain.cmake --ccache -DCMAKE_BUILD_TYPE=Release
+	bin/cget init -t native-toolchain.cmake --ccache -DCMAKE_BUILD_TYPE=MinSizeRel
 } 
 
 
@@ -314,6 +323,7 @@ export LC_ALL=C
 export CGET_CACHE_DIR="$PWD/download-cache"
 export CCACHE_CONFIGPATH="$PWD/etc/ccache.conf"
 export CCACHE_DIR="$PWD/.cache/ccache"
+export CURL_CA_BUNDLE="$PWD/etc/ssl/curl-ca-bundle.crt"
 
 if [ "$rebuild" = 1 ]; then
 	rm -rf bootstrap final
@@ -323,9 +333,6 @@ cd bootstrap
 stage1
 stage2
 cd ..
+mkdir -p .cache
 stage3
-if [ -L .cache ]; then
-	rm .cache
-	mv bootstrap/.cache .
-fi
 exec bin/rm -rf bootstrap

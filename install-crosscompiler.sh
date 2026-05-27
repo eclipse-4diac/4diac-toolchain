@@ -18,36 +18,39 @@ die() { echo "$*" >&2; exit 1; }
 cd "$(dirname "$0")"
 PATH="$PWD/bin"
 
-# move pre-downloaded toolchains into cache directory
-for i in *-cross-*.tar.lz; do
-	[ -f "$i" ] || continue
-	sha="$(sha256sum "$i")"
-	sha="${sha%% *}"
-	mkdir -p .cache/sha256-"$sha"
-	mv "$i" .cache/sha256-"$sha"
-done
+cachedir="${CGET_CACHE_DIR:-$PWD/download-cache}"
+downloaddir="${CGET_DOWNLOADS_DIR:-$PWD}"
 
 [ -n "$1" ] || die "Usage: $0 <target-triplet>"
 
 targetarch="$1"
 [ ! -f "$targetarch.cmake" ] || exit 0
+case "$targetarch" in
+	*-unknown-* | *-apple-*) targetarch=clang;;
+esac
 
 baseurl="https://sourceforge.net/projects/fordiac/files/4diac-fbe"
 
-hostarch="$(uname -m)" # x86_64
-hostplatform="$(uname -s)" # Linux
-[ "$hostplatform" = "Windows_NT" ] && hostplatform=Windows
-file="${hostplatform}-cross-${hostarch}_${targetarch}.tar.lz"
+if [ -x bin/gcc ]; then
+	triplet="$(bin/gcc --version)"
+	triplet="${triplet%%-gcc*}"
+else
+	triplet="$(uname -m)-apple-darwin20.2"
+fi
 
-mkdir -p .cache
+file="${triplet}_cross_${targetarch}.tar.lz"
 
 fetch_file_authenticated() {
-        local download="$1" url="$2" hash="$3"
+        download="$1"
+        url="$2"
+        hash="$3"
+
+        [ -f "$download" ] || download="${CGET_CACHE_DIR:-$PWD/download-cache}/sha256-$hash/$(basename "$download")"
 
         if [ ! -f "$download" ]; then
-                mkdir -p "${download%/*}"
-                echo "Downloading $url to $download..."
-                curl --location --disable --insecure -o "$download" "$url"
+                mkdir -p "$(dirname "$download")"
+                echo "### Downloading cross-compiler toolchain $url..."
+                COLUMNS=60 curl --retry 5 --retry-all-errors -f --progress-bar --location --disable --insecure -o "$download" "$url"
         fi
 
         if [ "$(sha256sum < "$download")" != "$hash  -" ]; then
@@ -58,11 +61,12 @@ fetch_file_authenticated() {
 
 while read hash url; do
         [ "${url##*/}" = "$file" ] || continue
-        download=".cache/sha256-$hash/$file"
+        download="$downloaddir/$file"
         fetch_file_authenticated "$download" "$baseurl/$url" "$hash"
-        echo "Installing toolchain..."
+        echo "### Installing cross-compiler toolchain for $targetarch..."
         lzip -d < "$download" | tar x
-        echo "Toolchain for $targetarch installed."
+        echo "### Cross-compiler toolchain for $targetarch installed."
+        [ "$targetarch" != clang ] || ./clang-toolchain/bin/x86_64-apple-darwin*-clang --version
         exit 0
 done < etc/crosscompilers.sha256sum
 

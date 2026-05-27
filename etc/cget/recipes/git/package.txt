@@ -1,1 +1,1 @@
-https://www.kernel.org/pub/software/scm/git/git-2.14.2.tar.gz -H sha256:a03a12331d4f9b0f71733db9f47e1232d4ddce00e7f2a6e20f6ec9a19ce5ff61 -X build.cmake
+https://www.kernel.org/pub/software/scm/git/git-2.51.1.tar.gz -H sha256:b049d79e6a6cb3d81334bf689af6301f4d4c884191dfae65d2bb314a90384831 -X build.cmake -G Ninja

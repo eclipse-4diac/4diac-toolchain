@@ -11,12 +11,19 @@
 #    Jörg Walter - initial implementation
 # *******************************************************************************/
 
-PROJECT(CMake C)
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
+project(CMake C)
 
-set(HAVE_POLL_FINE OFF CACHE BOOL "")
-set(KWSYS_LFS_WORKS OFF CACHE BOOL "")
-set(BUILD_TESTING OFF CACHE BOOL "")
+set(HAVE_POLL_FINE OFF CACHE BOOL "" FORCE)
+set(KWSYS_LFS_WORKS OFF CACHE BOOL "" FORCE)
+set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(CMAKE_USE_SYSTEM_CURL OFF CACHE BOOL "" FORCE)
+set(CMAKE_USE_SYSTEM_ZLIB OFF CACHE BOOL "" FORCE)
+set(CMAKE_USE_SYSTEM_ZSTD OFF CACHE BOOL "" FORCE)
+
+include(toolchain-utils)
+# misdetection on macos
+patch("${CMAKE_CURRENT_SOURCE_DIR}/Utilities/cmzlib/zutil.h" "ifndef fdopen" "if 0")
 
 include(${CGET_CMAKE_ORIGINAL_SOURCE_FILE})
 
@@ -25,5 +32,5 @@ cmake_policy(SET CMP0079 NEW)
 target_link_libraries(cmzlib PUBLIC pthread)
 
 if (WIN32)
-	target_link_libraries(CMakeLib PUBLIC ole32 oleaut32)
+	target_link_libraries(CMakeLib PUBLIC ole32 oleaut32 uuid)
 endif()

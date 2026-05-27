@@ -1,10 +1,10 @@
 /cget
+/doc/cmake-*
 /release-*
 /download-cache
 /.cache
 /bin
 /lib
-/doc
 /libexec
 /share
 /.config
@@ -14,10 +14,14 @@
 /*-linux-*
 /*-w64-*
 /*-none-*
+/*-unknown-*
+/*-apple-*
 /*.cmake
+/clang-toolchain
 *.pyc
 /toolchains-*.tar.xz
 /toolchains.zip
 /bootstrap
 /bootstrap-*.log
 /etc/crosscompilers.sha256sum
+/installer

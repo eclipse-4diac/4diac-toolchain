@@ -16,5 +16,5 @@
 
 PATH="$PATH:/usr/bin:/bin"
 cd "$(dirname "$0")/../.."
-rm -rf cget bootstrap bin lib libexec share doc etc/ssl include *.cmake *.log *-linux-*/ *-w64-*/ *-none-*/
+rm -rf cget bootstrap bin lib libexec share etc/ssl include *.cmake *.log *-linux-*/ *-w64-*/ *-none-*/ *-unknown-*/ *-apple-*/ clang-toolchain/
 echo cleaning done.

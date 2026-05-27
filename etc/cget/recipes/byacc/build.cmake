@@ -11,8 +11,8 @@
 #    Jörg Walter - initial implementation
 # *******************************************************************************/
 
-PROJECT(byacc C)
-CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
+project(byacc C)
 
 add_executable(byacc
   closure.c

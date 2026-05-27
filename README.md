@@ -29,10 +29,10 @@ don't need to do anything, 4diac-fbe handles this automatically for you.
 
 When using this as a standalone toolchain, the easiest way to install the
 toolchain environment is through a binary release. Check out the `release`
-branch of `4diac-toolchains` and run `etc/install-Linux.sh` or
-`etc/install-Windows.cmd` (as appropriate). This will securely download and
-install a pre-built release of the base toolchain for native compilation. To
-install cross-compilers for additional targets, see below.
+branch of `4diac-toolchains` and run `etc/install.sh` or `etc/install.cmd`
+(as appropriate). This will securely download and install a pre-built
+release of the base toolchain for native compilation. To install
+cross-compilers for additional targets, see below.
 
 These packages do not need administrative rights and can be installed into
 any folder.  In fact, there is no actual installation, you can extract the
@@ -57,9 +57,9 @@ another target on Windows.
 Usage with plain CMake
 ======================
 
-After bootstrap, use any of the top-level ``*.cmake`` files as
-``CMAKE_TOOLCHAIN_FILE``.  For best cross-platform compatibility, use the
-provided Ninja as build system.  You can even set ``PATH`` to just the toolchain
+After bootstrap, use any of the top-level `*.cmake` files as
+`CMAKE_TOOLCHAIN_FILE`.  For best cross-platform compatibility, use the
+provided Ninja as build system.  You can even set `PATH` to just the toolchain
 build directory, it should contain everything needed for building your code.
 That will yield a predictable build environment across all supported
 machines/OSes.
@@ -81,7 +81,7 @@ Example::
 
     …/toolchains/cross-env.sh arm-linux-musleabihf
 
-On Windows hosts, run this from ``bin\sh.exe``.
+On Windows hosts, run this from `bin\sh.exe`.
 
 In order to make builds isolated and reproducable, the script will open a new
 shell with an environment that tries very hard to prevent that system files are
@@ -89,7 +89,7 @@ used by accident. Since this toolchain contains a predictable and reasonably
 complete shell environment on all supported platforms, this new shell should be
 sufficient to build most code out there.
 
-The ``cross-env.sh`` script also supports sourcing instead of executing, but
+The `cross-env.sh` script also supports sourcing instead of executing, but
 that is not fully documented right now. Follow the on-screen messages if you use
 this mode.
 
@@ -101,7 +101,7 @@ If you want to manage multiple packages with dependencies, CGet is a good
 solution to do so -- in fact, this entire toolchain is built with CGet.
 
 See http://cget.readthedocs.io/en/latest/ for more information on CGet.  For
-some samples, look at ``etc/cget/recipes`` for the CGet recipes for the
+some samples, look at `etc/cget/recipes` for the CGet recipes for the
 toolchain itself; useful examples are:
 
  * cmake: how to build a CMake-based package with some cross-compilation fixups
@@ -113,18 +113,39 @@ to distribute in binary archives.  It only needs basic shell tools and should be
 drop-in compatible to the official CGet (minus some exotic features).
 
 The bundled cget should behave like the original, except for one addition:
-subcommand ``init`` has a new command line option ``--ccache``, which enables
+subcommand `init` has a new command line option `--ccache`, which enables
 ccache for that cget prefix.
 
 You can use shell scripts to automate/orchestrate your top-level cget builds in
 a cross-platform way. Example::
 
     # prepare default environment
-    . …/toolchains/set-path.sh arm-linux-musleabihf
+    . …/toolchains/cross-env.sh arm-linux-musleabihf
     cget_init
 
     # default config in current directory
     cget install my-fancy-package # assumes you have a etc/cget/recipes dir
+
+
+Environment Variables
+=====================
+
+Some environment variables can influence operation of `cget` and the
+toolchains:
+
+* CGET_CACHE_DIR (default: `<toolchains-root>/download-cache`) is a writable
+  location where all automatically downloaded files are stored, sorted into
+  subdirectories. You may copy this directory to a different toolchain
+  installation, but it must be writable so direct sharing is unsafe.
+
+* CGET_DOWNLOADS_DIR (default: `<toolchains-root>/`) is a read-only location
+  where you can provide pre-downloaded files. Do not use subdirectories. If
+  all required files are in there, this allows full off-line operation. It
+  will never be modified, so it is safe to share this among multiple
+  machines.
+
+ * CCACHE_DIR and CCACHE_CONFIGPATH can be overriden to use your own ccache
+   config
 
 
 List of available tools
@@ -136,7 +157,7 @@ tools.  At the time of this writing, included are:
  * A complete POSIX-like shell environment with many extra tools (busybox)
  * extra compression tools (lzip, 7zip)
  * cmake, GNU make, and ninja
- * ccache (config in subdirectory ``etc``, cache in ``.cache/ccache``)
+ * ccache (config in subdirectory `etc`, cache in `.cache/ccache`)
  * curl (with SSL support)
  * flex and byacc
  * git
@@ -147,7 +168,7 @@ tools.  At the time of this writing, included are:
 Internals
 =========
 
-Additional documentation for maintainers is in ``docs/README-MAINTAINER.rst``.
+Additional documentation for maintainers is in `doc/README-MAINTAINER.rst`.
 It also contains information on how to bootstrap a toolchain without pre-built
 binary archives.
 
@@ -163,7 +184,7 @@ advice and is not a substitute for professional legal advice.
 When supplying *toolchain* binaries (e.g., the binary toolchain archives
 mentioned earlier) to people outside your organisation, the GPL says you must
 distribute the full source code alongside the binaries.  Downloaded source
-archives are cached in subdirectory ``download-cache`` after building, so you could
+archives are cached in subdirectory `download-cache` after building, so you could
 just make the contents of that directory available alongside your binary
 archives.
 

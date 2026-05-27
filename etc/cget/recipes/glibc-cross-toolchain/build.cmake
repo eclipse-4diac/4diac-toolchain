@@ -11,8 +11,8 @@
 #    Jörg Walter - initial implementation
 # *******************************************************************************/
 
-PROJECT(glibc-cross-toolchain NONE)
-CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
+project(glibc-cross-toolchain NONE)
 
 include(toolchain-utils)
 
@@ -20,9 +20,9 @@ include(toolchain-utils)
 set(TARGETS "x86_64-linux-gnu;arm-linux-gnueabihf;aarch64-linux-gnu"
   CACHE STRING "Targets to download compilers for, e.g. x86_64-linux-gnu;arm-linux-gnueabihf")
 
-if (WIN32)
+if (WIN32 OR APPLE)
   message(FATAL_ERROR "\n\n===========================================================================\n"
-    "glibc-cross-toolchains are currently not supported on Windows\n"
+    "glibc-cross-toolchains are currently not supported on Windows or Apple\n"
     "===========================================================================\n\n")
 endif()
 ##############################################################
@@ -31,23 +31,23 @@ endif()
 set(cache_dir "${CGET_PREFIX}/download-cache")
 
 # download pre-built toolchains
-set(bootlin_version "stable-2022.08-1")
+set(bootlin_version "bleeding-edge-2025.08-1")
 macro(add_prebuilt_toolchain triple target hash)
   list(FIND TARGETS "${triple}" index)
   if (index GREATER_EQUAL 0)
     download_extra_source(${triple}
-      "${target}--glibc--${bootlin_version}.tar.bz2"
-      "https://toolchains.bootlin.com/downloads/releases/toolchains/${target}/tarballs/${target}--glibc--${bootlin_version}.tar.bz2"
+      "${target}--glibc--${bootlin_version}.tar.xz"
+      "https://toolchains.bootlin.com/downloads/releases/toolchains/${target}/tarballs/${target}--glibc--${bootlin_version}.tar.xz"
       "${hash}")
   endif()
 endmacro()
 
 add_prebuilt_toolchain("x86_64-linux-gnu" "x86-64-core-i7"
-  "7a31f72e6dc378eac8a97b0915b3619ba95c79f73046d052539c44f91bee9a02")
+  "3777ad89e6d60bc8fafb83b6b74284b6c56aee20ea00e51dfa466800e98dcdb9")
 add_prebuilt_toolchain("arm-linux-gnueabihf" "armv7-eabihf"
-  "64329b3e72350ceda65997368395a945ef83769013d82414dc5f2021c33f2d44")
+  "eed0e672d305ac08d444685b48eafb291c63387ef7916c1615354ebfb3d1ebdc")
 add_prebuilt_toolchain("aarch64-linux-gnu" "aarch64"
-  "844df3c99508030ee9cb1152cb182500bb9816ff01968f2e18591d51d766c9e7")
+  "54875d12829a792b8d4d1c9fb1f736afc60f514b0d260616f188eafafaac7cb5")
 
 # extract downloaded toolchains and generate toolchain file
 foreach (ARCH IN LISTS TARGETS)

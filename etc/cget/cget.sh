@@ -7,7 +7,7 @@
 # http://www.eclipse.org/legal/epl-2.0.
 #
 # SPDX-License-Identifier: EPL-2.0
-# 
+#
 # Contributors:
 #    Jörg Walter - initial implementation
 # *******************************************************************************/
@@ -46,12 +46,13 @@ cgetdir="$(cd "$(dirname "$0")"; pwd)"
 exe="$cgetdir/${0##*/}"
 
 die() { set +e; cleanup; trap "" EXIT; echo "
-$exe: $*" >&2; exit 1; }
-trap 'exit="$?"; set +e; cleanup; [ "$exit" = 0 ] || die "Exiting due to error${pgkname:+ while processing $pkgname}"' EXIT
-trap 'set +e; cleanup; exit 1' INT TERM
-trap 'set +e; cleanup; exit 1' HUP PIPE IO USR1 USR2 2>/dev/null || true
+### ${exe##*/}: $*" >&2; exit 1; }
+trap 'exit="$?"; set +e; cleanup; [ "$exit" = 0 ] || die "Exiting with exit status $exit due to error${pgkname:+ while processing $pkgname}"' EXIT
+trap 'set +e; echo "Exiting due to SIGINT, SIGHUP, or SIGTERM" >&2; cleanup; exit 1' INT TERM HUP
+trap 'set +e; echo "Exiting due to SIGPIPE, SIGIO, or SIGUSR" >&2; cleanup; exit 1' PIPE IO USR 2>/dev/null || true
+
 cleanup() { :; }
-msg() { echo "### $*"; }
+msg() { echo "### [${prefix##*/}] $*"; }
 
 usage() {
 	echo "Usage: $0 [-p <prefix>] {install|remove|list|init|help} [package ...]"
@@ -69,13 +70,15 @@ is_windows() { [ "$(uname -s)" = "Windows_NT" ]; }
 sha256sum() { cmake -E sha256sum "$@"; }
 md5sum() { cmake -E md5sum "$@"; }
 extract() { cmake -E tar xf "$@"; }
-download() { cmake -Dfile="$1" -DURL="$2" -P "$exe"; }
+downloadfile() { COLUMNS=60 curl --retry 5 --retry-all-errors -f --progress-bar -L -k -o "$1" "$2"; }
+# make bootstrapping easier
+type curl &> /dev/null || downloadfile() { cmake -Dfile="$1" -DURL="$2" -P "$exe"; }
 
 if is_windows; then
 	# on windows, sometimes some filesystem operations keep files locked after the corresponding program exited, so retry a few times.
 	workaround_fslock() {
 		local count=0
-		while [ "$count" -lt 10 ] && ! "$@"; do 
+		while [ "$count" -lt 10 ] && ! "$@"; do
 			sleep 1;
 			count="$((count+1))"
 		done
@@ -85,7 +88,7 @@ else
 fi
 
 compiler_ver() {
-	cmake -DCOMPILERVER="$(echo ./CMakeFiles/*.*.*/CMakeCCompiler.cmake)" -P "$exe" 2>&1 | while read line; do
+	command cmake -DCOMPILERVER="$(echo ./CMakeFiles/*.*.*/CMakeCCompiler.cmake)" -P "$exe" 2>&1 | while read line; do
 		echo -n "$line";
 	done
 }
@@ -94,6 +97,43 @@ cmake_build() {
 	compiler_ver="$(compiler_ver || true)"
 	[ -z "$compiler_ver" ] || export CCACHE_COMPILERCHECK="string:$compiler_ver"
 	cmake --build . "$@";
+}
+
+do_log=
+log_cmd() {
+	local step="$1" logfile="$2"
+	shift; shift
+
+	if [ "$do_log" = 1 ]; then
+		echo "### [${prefix##*/}] $step...";
+		counter=0
+		(
+			locks=""
+			set +e
+			"$@"
+			rc="$?"
+			case "$rc" in
+			0) echo "### Finished successfully.";;
+			*) echo "### ERROR! See $logfile for details.";;
+			esac
+			exit "$rc"
+		) 2>&1 | tee "$logfile" | while read -r line; do
+			counter="$((counter+1))"
+			if [ "${line:0:4}" = "### " ]; then
+				printf "### %5i: %s" "$counter" "$line"
+			elif [ "${#line}" -gt 64 ]; then
+				# this is not POSIX sh syntax, but our busybox sh supports it
+				printf "### %5i: %s" "$counter" "${line:0:20}...${line:$((${#line}-40)):40}"
+			else
+				printf "### %5i: %s" "$counter" "$line"
+			fi
+			echo -ne '\e[0m\e[K\r'
+		done
+		echo
+		tail -n 1 "$logfile" | grep "^### Finished successfully.$" > /dev/null
+	else
+		"$@"
+	fi
 }
 
 forbid_separator() {
@@ -137,6 +177,7 @@ init_cmdline() {
 		unset "$i"
 	done
 
+	defs="$defs-DCMAKE_BUILD_TYPE=MinSizeRel"
 	init_shared="OFF"
 	toplevel="1"
 }
@@ -148,6 +189,7 @@ parse_cmdline() {
 			-p|--prefix) ensure_toplevel; prefix="$2"; shift 2;;
 			-h|--help) usage;;
 			-v|--verbose) export VERBOSE=1; defs="$defs-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"; shift;; # works best for makefile builds
+			--log) do_log="1"; shift;;
 			-y|--yes) shift;; # we never ask
 
 			-t|--toolchain) ensure init; init_toolchain="$(abs $2)"; shift 2;;
@@ -158,6 +200,7 @@ parse_cmdline() {
 			--cxxflags) ensure init; init_cxxflags="$2"; shift 2;;
 			--cflags) ensure init; init_cflags="$2"; shift 2;;
 			--ldflags) ensure init; init_ldflags="$2"; shift 2;;
+			--preset) preset="$2"; shift 2;;
 			--ccache) ensure init; ccache="1"; shift;;
 
 			-f|--file) ensure install; packages="$packages $(while read pkg _; do echo "$pkg"; done < "$2")"; shift 2;;
@@ -176,6 +219,7 @@ parse_cmdline() {
 				shift 2;; # disallow subdirs for security reasons
 			-H|--hash) ensure install build remove; hash="$2"; shift 2;;
 			--release) ensure install build remove; defs="$defs-DCMAKE_BUILD_TYPE=Release"; shift;;
+			--minsizerel) ensure install build remove; defs="$defs-DCMAKE_BUILD_TYPE=MinSizeRel"; shift;;
 			--debug) ensure install build remove; defs="$defs-DCMAKE_BUILD_TYPE=Debug"; shift;;
 
 			-c|--configure) ensure build; build_configure=1; shift;;
@@ -183,6 +227,7 @@ parse_cmdline() {
 			-T|--target) ensure build; build_target="$2"; shift 2;;
 
 			-D*) forbid_separator "$2" Defines; defs="$defs$1"; shift;;
+			-S*) forbid_separator "$2" Defines; defs="$defs$1"; shift;;
 			--define) forbid_separator "$2" Defines; defs="$defs-D$2"; shift 2;;
 
 			-*) die "Unsupported option: $1";;
@@ -231,8 +276,10 @@ parse_package() {
 		parse_cmdline $args
 		unset args url
 		[ ! -f requirements.txt ] || pkg_depends="$PWD/requirements.txt"
-	elif [ -e "$pkg_url" ]; then
+	elif [ -d "$pkg_url" ]; then
 		pkg_url="$(abs "$pkg_url")"
+	elif [ -e "$pkg_url" ]; then
+		pkg_url="file:///$(abs "$pkg_url")"
 	else
 		case "$pkg_url" in
 			http://*|https://*|ftp://*) ;;
@@ -286,7 +333,7 @@ install_depends() {
 
 	while read pkg _; do
 		msg "Checking dependency $pkg..."
-		sh "$exe" ${VERBOSE:+-v} -p "$prefix" install "$pkg" -B "$builddir" -G "$generator" "$@"
+		sh "$exe" ${VERBOSE:+-v} ${do_log:+--log} -p "$prefix" install "$pkg" -B "$builddir" -G "$generator" "$@"
 	done < "$pkg_depends"
 }
 
@@ -298,7 +345,7 @@ fetch_file() {
 		mkdir -p "${download%/*}"
 		msg "Downloading $3..."
 		rm -f "$download"
-		download "$download" "$3"
+		downloadfile "$download" "$3"
 	fi
 
 	if [ ! -s "$download" ]; then
@@ -343,7 +390,8 @@ prepare_source() {
 	mkdir -p "$pkgbuilddir/tmp"
 
 	if [ ! -d "$pkg_url" ]; then
-		fetch_file "${pkg_url##*/}" "$hash" "$pkg_url"
+		fn="${pkg_url%%\?*}"
+		fetch_file "${fn##*/}" "$hash" "$pkg_url"
 
 		msg "Extracting ${pkg_url##*/}..."
 		cd "$pkgbuilddir/tmp"
@@ -368,7 +416,7 @@ prepare_build_script() {
 	# directory (into different cget prefixes -- same prefix is useless and
 	# unsupported).
 	need_cleanup=""
-	if [ -n "$buildscript" ]; then
+	if [ -n "$buildscript" -a -d "$pkg_url" ]; then
 		[ -f "$buildscript" ] || die "Build script does not exist: $buildscript"
 
 		lock "${pkg_url%/}"
@@ -409,11 +457,11 @@ cleanup_build() {
 }
 
 cleanup() {
-	cleanup_build_script
+	cleanup_build_script 2>/dev/null
 	while [ -n "$locks" ]; do
 		locks="${locks#}"
 		lock="${locks%%*}"
-		rmdir "$lock"
+		rmdir "$lock" 2>/dev/null
 		locks="${locks#"$lock"}"
 	done
 }
@@ -431,11 +479,19 @@ install() {
 	build_clean=1
 	build
 
-	msg "Installing $pkgname..."
 	cd "$pkgbuilddir/build"
 	prepare_build_script
-	cmake -P cmake_install.cmake || return 1
+
+	log_cmd "Installing $pkgname" "$builddir/$pkgname-install.log" _install_internal
+
 	cleanup_build_script
+	cd "$prefix"
+	cleanup_build "$pkgbuilddir"
+}
+_install_internal() {
+	msg "Installing $pkgname..."
+
+	cmake -P cmake_install.cmake || return 1
 
 	echo >> install_manifest.txt # file is missing trailing newline
 
@@ -443,22 +499,23 @@ install() {
 	while read file; do
 		echo "${file#"$prefix/"}"
 	done < install_manifest.txt > "$pkgdir/$pkgname/install_manifest.txt"
-
-	cd "$prefix"
-	cleanup_build "$pkgbuilddir"
 }
 
 build() {
-	msg "Building $pkgname..."
-
 	cd "$prefix"
 	[ -z "$build_clean" ] || cleanup_build "$pkgbuilddir"
 
 	prepare_source
 
+	log_cmd "Building $pkgname" "$builddir/$pkgname.log" _build_internal
+
+	cleanup_build_script
+}
+_build_internal() {
+	msg "Building $pkgname..."
+
 	mkdir -p "$pkgbuilddir/build"
 	cd "$pkgbuilddir/build"
-	msg "Entering '$PWD', source dir '$pkg_url'"
 
 	if [ ! -f CMakeCache.txt -o -n "$build_configure" ]; then
 		set --
@@ -468,17 +525,18 @@ build() {
 			  [ -z "$def" ] || set -- "$@" "$def"
 			  defs="${defs#"$def"}"
 		done
-		if ! cmake "$pkg_url" -DCMAKE_INSTALL_PREFIX="$prefix" "$@" \
+		cd "$pkg_url"
+		if ! cmake -S. -B"$pkgbuilddir/build" -DCMAKE_INSTALL_PREFIX="$prefix" ${preset:+--preset} ${preset} "$@" \
 			-DCMAKE_TOOLCHAIN_FILE="$prefix/cget/cget.cmake" \
 			-G "${generator:-Unix Makefiles}" \
 			-DCGET_PREFIX:STRING="$prefix"; then
 			rm CMakeCache.txt
 			return 1
 		fi
+		cd "$pkgbuilddir/build"
 	fi
-	cmake_build ${build_target:+--target "$build_target"}
 
-	cleanup_build_script
+	cmake_build ${build_target:+--target "$build_target"}
 }
 
 remove() {
@@ -507,7 +565,7 @@ string(REGEX REPLACE "/cget\\\$" "" CGET_PREFIX "\${CGET_PREFIX}")
 set(CMAKE_SYSTEM_PREFIX_PATH "\${CGET_PREFIX}")
 $toolchain
 list(APPEND CMAKE_FIND_ROOT_PATH "\${CGET_PREFIX}")
-set(CMAKE_MODULE_PATH "\${TOOLCHAINS_ROOT}/etc/cget/cmake")
+list(PREPEND CMAKE_MODULE_PATH "\${TOOLCHAINS_ROOT}/etc/cget/cmake")
 set(CMAKE_INSTALL_PREFIX "\${CGET_PREFIX}" CACHE STRING "")
 set(CMAKE_EXE_LINKER_FLAGS_INIT "-L\${CGET_PREFIX}/lib \${CMAKE_EXE_LINKER_FLAGS_INIT}")
 set(CMAKE_SHARED_LINKER_FLAGS_INIT "-L\${CGET_PREFIX}/lib \${CMAKE_SHARED_LINKER_FLAGS_INIT}")
@@ -608,6 +666,5 @@ if (URL)
   file(DOWNLOAD "${URL}" "${file}" TLS_VERIFY OFF)
 else()
   include(${COMPILERVER})
-  execute_process(COMMAND "${CMAKE_CXX_COMPILER}" -v)
   execute_process(COMMAND "${CMAKE_C_COMPILER}" -v)
 endif()

@@ -11,8 +11,14 @@
 #    Jörg Walter - initial implementation
 # *******************************************************************************/
 
-PROJECT(m4 C)
-CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
+project(m4 C)
+
+include(toolchain-utils)
+if (APPLE)
+  patch(lib/obstack.c "_Noreturn" "__attribute_noreturn__")
+  patch(lib/stdio.in.h "@GNULIB_(FPUTS|PUTS|FPUTC|PUTC|FWRITE|FPRINTF|VFPRINTF|PRINTF)@" "0")
+endif()
 
 set(AUTOTOOLS_CONFIGURE_OPTIONS
   "--disable-threads"

@@ -11,43 +11,70 @@
 #    Jörg Walter - initial implementation
 # *******************************************************************************/
 
-PROJECT(gnumake C)
-CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
+project(gnumake C)
+
+include(toolchain-utils)
 
 set(iswin $<BOOL:${WIN32}>)
 set(notwin $<NOT:${iswin}>)
 
 add_executable(make
+	src/ar.c src/arscan.c src/commands.c src/commands.h
+	src/debug.h src/default.c src/dep.h src/dir.c src/expand.c
+	src/file.c src/filedef.h src/function.c src/getopt.c
+	src/getopt.h src/getopt1.c src/gettext.h src/guile.c
+	src/hash.c src/hash.h src/implicit.c src/job.c src/job.h
+	src/load.c src/loadapi.c src/main.c src/makeint.h src/misc.c
+	src/mkcustom.h src/os.h src/output.c src/output.h src/read.c
+	src/remake.c src/rule.c src/rule.h src/shuffle.h src/shuffle.c
+	src/signame.c src/strcache.c src/variable.c src/variable.h
+	src/version.c src/vpath.c src/remote-stub.c
 
-  ar.c arscan.c commands.c default.c dir.c expand.c file.c function.c getopt.c
-  getopt1.c guile.c implicit.c job.c load.c loadapi.c main.c misc.c output.c
-  read.c remake.c rule.c signame.c strcache.c variable.c version.c vpath.c
-  hash.c remote-stub.c glob/fnmatch.c glob/glob.c
-
-  $<${notwin}: posixos.c>
-
-  $<${iswin}: getloadavg.c w32/compat/posixfcn.c w32/pathstuff.c
-  w32/subproc/misc.c w32/subproc/sub_proc.c w32/subproc/w32err.c w32/w32os.c>)
+        $<${notwin}: src/posixos.c>
+        $<${iswin}: 
+	  src/w32/pathstuff.c src/w32/w32os.c src/w32/compat/dirent.c
+	  src/w32/compat/posixfcn.c src/w32/include/dirent.h
+	  src/w32/include/dlfcn.h src/w32/include/pathstuff.h
+	  src/w32/include/sub_proc.h src/w32/include/w32err.h
+	  src/w32/subproc/misc.c src/w32/subproc/proc.h
+	  src/w32/subproc/sub_proc.c src/w32/subproc/w32err.c
+	  lib/fnmatch.c lib/glob.c lib/alloca.c lib/getloadavg.c
+        >)
 
 install(TARGETS make DESTINATION bin)
 
 file(TO_CMAKE_PATH "${CGET_PREFIX}" CGET_PREFIX)
+file(RENAME "${CMAKE_CURRENT_SOURCE_DIR}/lib/glob.in.h" "${CMAKE_CURRENT_SOURCE_DIR}/lib/glob.h")
 
 target_include_directories(make PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories(make PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/glob)
+target_include_directories(make PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_include_directories(make PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 target_compile_definitions(make PRIVATE INCLUDEDIR="${CGET_PREFIX}/include")
 target_compile_definitions(make PRIVATE LIBDIR="${CGET_PREFIX}/lib")
 target_compile_definitions(make PRIVATE LOCALEDIR="")
 target_compile_definitions(make PRIVATE HAVE_CONFIG_H=1)
+target_compile_options(make PRIVATE -std=c99)
+
+if (APPLE)
+  target_compile_definitions(make PRIVATE -DST_MTIM_NSEC=st_mtimespec.tv_nsec)
+else()
+  target_compile_definitions(make PRIVATE -DST_MTIM_NSEC=st_mtim.tv_nsec)
+endif()
 
 if (WIN32)
-  target_include_directories(make PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/w32/include)
+  target_include_directories(make PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/w32/include)
   target_compile_definitions(make PRIVATE WINDOWS32)
   target_compile_options(make PRIVATE -mthreads)
+  target_compile_definitions(make PRIVATE _cdecl=)
 
-  file(RENAME config.h.W32 config.h)
+  file(RENAME lib/fnmatch.in.h lib/fnmatch.h)
+  file(RENAME lib/alloca.in.h lib/alloca.h)
+  file(RENAME src/config.h.W32 src/config.h)
+
+  patch(lib/alloca.h "@HAVE_ALLOCA_H@" "0")
+
 else()
-
   target_compile_definitions(make PRIVATE __alloca=alloca)
   # Regex for simplification: <Ctrl-J>*/\*[^*]*\*/
   file(WRITE config.h "
@@ -108,6 +135,8 @@ else()
 #define HAVE_STRNCASECMP 1
 #define HAVE_STRNDUP 1
 #define HAVE_STRSIGNAL 1
+#define HAVE_STRTOLL 1
+#define HAVE_STPCPY 1
 #define HAVE_SYS_PARAM_H 1
 #define HAVE_SYS_RESOURCE_H 1
 #define HAVE_SYS_SELECT_H 1
@@ -119,6 +148,7 @@ else()
 #define HAVE_TTYNAME 1
 #define HAVE_UINTMAX_T 1
 #define HAVE_UNISTD_H 1
+#define HAVE_UMASK 1
 #define HAVE_UNSIGNED_LONG_LONG_INT 1
 #define HAVE_VFORK 1
 #define HAVE_WAIT3 1
@@ -141,7 +171,6 @@ else()
 
 /* Define to 1 if the `S_IS*' macros in <sys/stat.h> do not work properly. */
 #define STDC_HEADERS 1
-#define ST_MTIM_NSEC st_mtim.tv_nsec
 #define TIME_WITH_SYS_TIME 1
 #ifndef _ALL_SOURCE
 # define _ALL_SOURCE 1
@@ -162,6 +191,8 @@ else()
 #ifndef _DARWIN_USE_64_BIT_INODE
 # define _DARWIN_USE_64_BIT_INODE 1
 #endif
+
+#include \"../src/mkcustom.h\"
 ")
 
 endif()

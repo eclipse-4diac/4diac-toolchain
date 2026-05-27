@@ -1,6 +1,6 @@
-diff -ru src.orig/litecross/Makefile src/litecross/Makefile
---- src.orig/litecross/Makefile	2021-03-23 10:21:31.028195989 +0100
-+++ src/litecross/Makefile	2021-03-23 12:32:32.334015030 +0100
+diff -ru src.orig/litecross/Makefile.gcc src/litecross/Makefile.gcc
+--- src.orig/litecross/Makefile.gcc	2021-03-23 10:21:31.028195989 +0100
++++ src/litecross/Makefile.gcc	2021-03-23 12:32:32.334015030 +0100
 @@ -24,10 +24,18 @@
  ifneq ($(findstring mingw,$(TARGET)),)
  MUSL_SRCDIR =
@@ -13,7 +13,7 @@ diff -ru src.orig/litecross/Makefile src/litecross/Makefile
 +NEWLIB_SRCDIR =
 +endif
 +
-+ifneq ($(findstring none,$(TARGET)),)
++ifneq ($(findstring unknown,$(TARGET))$(findstring none,$(TARGET)),)
 +MUSL_SRCDIR =
 +LINUX_SRCDIR =
 +MINGW_SRCDIR =
@@ -107,57 +107,56 @@ diff -ru src.orig/litecross/Makefile src/litecross/Makefile
 diff -ru src.orig/Makefile src/Makefile
 --- src.orig/Makefile	2021-03-23 10:21:31.021529342 +0100
 +++ src/Makefile	2021-03-23 13:18:05.882535182 +0100
-@@ -10,6 +10,7 @@
- MPFR_VER = 4.2.0
- LINUX_VER = 6.1.31
- MINGW_VER = v7.0.0
-+NEWLIB_VER = 4.1.0
- 
- GNU_SITE = https://ftpmirror.gnu.org/gnu
- GCC_SITE = $(GNU_SITE)/gcc
-@@ -27,6 +28,8 @@
+@@ -20,6 +20,8 @@
  
  MINGW_SITE = https://sourceforge.net/projects/mingw-w64/files/mingw-w64/mingw-w64-release/
  
 +NEWLIB_SITE = https://sourceware.org/pub/newlib/
 +
  DL_CMD = wget -c -O
- SHA1_CMD = sha1sum -c
+ SHA256_CMD = sha256sum -c
  
-@@ -47,12 +50,13 @@
- 	$(if $(MPFR_VER),mpfr-$(MPFR_VER)) \
+@@ -36,6 +38,7 @@
+ MUSL_VER ?= 1.2.5
+ LINUX_VER ?= 4.19.325
+ MINGW_VER ?= v7.0.0
++NEWLIB_VER ?= 4.3.0.20230120
+ 
+ ifeq ($(COMPILER),gcc)
+ 
+@@ -64,12 +67,13 @@
  	$(if $(ISL_VER),isl-$(ISL_VER)) \
  	$(if $(LINUX_VER),linux-$(LINUX_VER)) \
+ 	$(if $(MINGW_VER),mingw-w64-$(MINGW_VER)) \
 +	$(if $(NEWLIB_VER),newlib-$(NEWLIB_VER)) \
-         $(if $(MINGW_VER),mingw-w64-$(MINGW_VER))
+ 	$(if $(LLVM_VER),llvm-project-$(LLVM_VER).src)
  
  all:
  
  clean:
--	rm -rf gcc-* binutils-* musl-* gmp-* mpc-* mpfr-* isl-* build build-* linux-* mingw-w64-*
-+	rm -rf gcc-* binutils-* musl-* gmp-* mpc-* mpfr-* isl-* build build-* linux-* mingw-w64-* newlib-*
+-	rm -rf gcc-* binutils-* musl-* gmp-* mpc-* mpfr-* isl-* build build-* linux-* llvm-project-* mingw-w64-*
++	rm -rf gcc-* binutils-* musl-* gmp-* mpc-* mpfr-* isl-* build build-* linux-* llvm-project-* mingw-w64-* newlib-*
  
  distclean: clean
  	rm -rf sources
-@@ -70,6 +74,7 @@
- $(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/binutils*)): SITE = $(BINUTILS_SITE)
- $(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/gcc*)): SITE = $(GCC_SITE)/$(basename $(basename $(notdir $@)))
- $(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/musl*)): SITE = $(MUSL_SITE)
-+$(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/newlib*)): SITE = $(NEWLIB_SITE)
- $(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/linux-6*)): SITE = $(LINUX_SITE)/v6.x
- $(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/linux-5*)): SITE = $(LINUX_SITE)/v5.x
- $(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/linux-4*)): SITE = $(LINUX_SITE)/v4.x
- $(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/linux-3*)): SITE = $(LINUX_SITE)/v3.x
-@@ -183,6 +188,7 @@
+@@ -95,6 +99,7 @@
+ $(patsubst hashes/%.sha256,$(SOURCES)/%,$(wildcard hashes/linux-headers-*)): SITE = $(LINUX_HEADERS_SITE)
+ $(patsubst hashes/%.sha256,$(SOURCES)/%,$(wildcard hashes/llvm-project-*)): SITE = $(LLVM_SITE)/llvmorg-$(patsubst llvm-project-%.src,%,$(basename $(basename $(notdir $@))))
+ $(patsubst hashes/%.sha256,$(SOURCES)/%,$(wildcard hashes/mingw-w64*)): SITE = $(MINGW_SITE)
++$(patsubst hashes/%.sha256,$(SOURCES)/%,$(wildcard hashes/newlib*)): SITE = $(NEWLIB_SITE)
+ 
+ $(SOURCES):
+ 	mkdir -p $@
+@@ -197,6 +203,7 @@
  	$(if $(ISL_VER),"ISL_SRCDIR = $(REL_TOP)/isl-$(ISL_VER)") \
  	$(if $(LINUX_VER),"LINUX_SRCDIR = $(REL_TOP)/linux-$(LINUX_VER)") \
  	$(if $(MINGW_VER),"MINGW_SRCDIR = $(REL_TOP)/mingw-w64-$(MINGW_VER)") \
 +	$(if $(NEWLIB_VER),"NEWLIB_SRCDIR = $(REL_TOP)/newlib-$(NEWLIB_VER)") \
+ 	$(if $(LLVM_VER),"LLVM_SRCDIR = $(REL_TOP)/llvm-project-$(LLVM_VER).src") \
+ 	$(if $(LLVM_VER),"LLVM_VER = $(LLVM_VER)") \
  	"-include $(REL_TOP)/config.mak"
- 
- all: | $(SRC_DIRS) $(BUILD_DIR) $(BUILD_DIR)/Makefile $(BUILD_DIR)/config.mak
---- src.orig/patches/newlib-4.1.0/0001-mbstring.diff	2023-10-19 12:40:01.262173049 +0200
-+++ src/patches/newlib-4.1.0/0001-mbstring.diff	2023-10-19 12:39:48.205856406 +0200
+--- src.orig/patches/newlib-4.5.0.20241231/0001-mbstring.diff	2023-10-19 12:40:01.262173049 +0200
++++ src/patches/newlib-4.5.0.20241231/0001-mbstring.diff	2023-10-19 12:39:48.205856406 +0200
 @@ -0,0 +1,10 @@
 +--- a/newlib/libc/include/stdlib.h	2023-10-19 12:34:17.645891114 +0200
 ++++ b/newlib/libc/include/stdlib.h	2023-10-19 12:34:35.294282578 +0200
